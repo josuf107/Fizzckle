@@ -1,0 +1,15 @@
+<h1>Expense Categories
+<table>
+    <tr class=header>
+        <td>Category
+        <td>Spent
+        <td># Expenses
+        <td>Average Expense
+    $forall (cat, spent, count, avg) <- rows
+        <tr>
+            <td>
+                <a class=stress href="/expenses/#{toPathPiece cat}">
+                    #{toPathPiece cat}
+            <td>#{showDollars spent}
+            <td>#{show count}
+            <td>#{showDollars avg}

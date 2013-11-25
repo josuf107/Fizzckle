@@ -1,0 +1,40 @@
+/* http://colorschemedesigner.com/#3l21Tw0w0w0w0 */
+
+body
+    font-family: arial
+
+h1, span, p
+    color: #36BBCE
+
+#val
+    margin-top: 5px
+
+.stress
+    color: #FF7A00
+    font-weight: bold
+    text-decoration: none
+
+table
+    margin-top: 5px
+    background-color: #5FC0CE
+    border: 4px solid #1F6B75
+    border-collapse: collapse
+
+td
+    padding-right:20px
+    color: #015965
+    margin: 0px
+    border-right: 4px solid #1F6B75
+
+.header td
+    font-weight: bold
+    border-bottom: 4px solid #1F6B75
+
+.button
+    border-right: 0px solid #1F6B75
+    color: #FF7A00
+    cursor:pointer
+    font-weight: bold
+
+.freq
+    cursor: pointer

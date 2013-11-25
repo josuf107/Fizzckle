@@ -1,0 +1,12 @@
+<h1>Expenses: #{toPathPiece cat}
+<table>
+    <tr class=header>
+        <td>Spent
+        <td>Description
+        <td>Date
+    $forall (spent, desc, date) <- rows
+        <tr>
+            <td>#{showDollars spent}
+            <td>#{desc}
+            <td>#{date}
+

@@ -1,0 +1,31 @@
+var appRoot = window.location.host;
+function set (cat, val, freq) {
+    $.ajax({
+        url: "http://" + appRoot + "/budgets/" + cat,
+        data: { "value" : val , "freq" : freq },
+        type: "put"
+    }).done(doRender);
+    return false;
+}
+
+function newIncome () {
+    arr = $(this).serializeArray();
+    set(arr[0].value, -1 * parseFloat(arr[2].value), arr[1].value);
+    return false;
+}
+
+function newBudget () {
+    arr = $(this).serializeArray();
+    set(arr[0].value, arr[2].value, arr[1].value);
+    return false;
+}
+
+function doRender () {
+    window.location.reload(true);
+}
+
+$(init)
+function init () {
+    $("#newBudget").submit(newBudget);
+    $("#newIncome").submit(newIncome);
+}
