@@ -63,7 +63,7 @@ that you can text the following commands:
 * `? food subway after swim practice` -> Fizzckle records a promise.
   This feature allows you to record that you intend to spend money on
   something but don't know how much yet
-* `\* food 5.63` -> Fizzckle fulfills your promise by completing the
+* `* food 5.63` -> Fizzckle fulfills your promise by completing the
   entry with the value $5.63
 
 Implementation
