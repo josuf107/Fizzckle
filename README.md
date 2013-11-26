@@ -59,7 +59,7 @@ that you can text the following commands:
 * `@budget food 100 weekly` -> Fizzckle sets or creates the budget
   "food" to be $100 weekly (also allows "yearly" and "monthly")
 * `@budget food 450` -> Fizzckle sets or creates the budget "food" to be
-  $100 monthly
+  $450 monthly
 * `? food subway after swim practice` -> Fizzckle records a promise.
   This feature allows you to record that you intend to spend money on
   something but don't know how much yet
