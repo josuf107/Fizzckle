@@ -45,8 +45,8 @@ budget category just re-enter it with a value of zero (Awesome!).
 Clicking a budget name in the table displays the expense report for that
 budget.
 
-The text messaging interface more complicated, but not too bad. You'll
-need to set up Twilio to point a number to the webapp. Once you've done
+The text messaging interface is a bit more complicated, but not too bad. You'll
+need to set up Twilio to point a phone number to the webapp. Once you've done
 that you can text the following commands:
 
 * `food` -> Fizzckle responds with the balance for the budget "food"
