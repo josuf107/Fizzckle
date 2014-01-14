@@ -41,4 +41,4 @@ executable Fizzckle
                  , time
                  , filepath
                  , parsec
-                 , transformers                  >= 3.0 -- stupid mmorph package mistake
+                 , transformers                  >= 0.3
