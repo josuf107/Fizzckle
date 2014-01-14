@@ -13,8 +13,7 @@ Navigate to the source root.
 ```
 $ cabal update
 $ cabal install cabal-dev
-$ cabal-dev install yesod-platform
-$ make
+$ cabal-dev install
 ```
 
 That should do it.
@@ -25,13 +24,13 @@ Running
 Run locally with
 
 ```
-$ ./FizzWeb --debug
+$ cabal-dev/bin/FizzWeb --debug
 ```
 
 Or for realz with
 
 ```
-$ ./FizzWeb example.com port
+$ cabal-dev/bin/FizzWeb example.com port
 ```
 
 Usage
