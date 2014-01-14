@@ -5,7 +5,7 @@ import Fizz.Store
 import Fizz.Utils
 
 import Control.Applicative
-import Data.Either
+import Control.Monad (void)
 import qualified Text.ParserCombinators.Parsec as PC
 
 parseFizz :: String -> Action
@@ -15,10 +15,10 @@ parseFizz = either (Error . show) id
 doFizz :: Action -> IO String
 doFizz (Error s) = return $ "Error: " ++ s
 doFizz (EnterExpense e) = do
-    writeExpenseEntry e
+    void $ writeExpenseEntry e
     doFizz . BudgetReport . getExpenseCategory $ e
 doFizz (Promise e) = do
-    writePromise e
+    void $ writePromise e
     return $ "Promised for " ++ (show . getExpenseCategory $ e)
 doFizz (Fulfill e) = do
     promises <- readPromises (getExpenseCategory $ e)
@@ -55,11 +55,11 @@ fizzParser = PC.choice [emptyParser
 nonwhitespace:: PC.GenParser Char st String
 nonwhitespace = PC.many (PC.noneOf whiteChars)
 
-whitespace:: PC.GenParser Char st String
-whitespace = PC.many (PC.oneOf whiteChars)
+whitespace:: PC.GenParser Char st ()
+whitespace = void $ PC.many (PC.oneOf whiteChars)
 
 emptyParser :: PC.GenParser Char st Action
-emptyParser = do 
+emptyParser = do
     whitespace
     PC.eof
     return (Error "Empty message")
@@ -83,7 +83,7 @@ queryParser = do
 promiseParser :: PC.GenParser Char st Action
 promiseParser = do
     whitespace
-    PC.char '?'
+    void $ PC.char '?'
     whitespace
     c <- mkCategory <$> nonwhitespace
     whitespace
@@ -93,7 +93,7 @@ promiseParser = do
 fulfillParser :: PC.GenParser Char st Action
 fulfillParser = do
     whitespace
-    PC.char '*'
+    void $ PC.char '*'
     whitespace
     c <- mkCategory <$> nonwhitespace
     whitespace
@@ -103,7 +103,7 @@ fulfillParser = do
 actionParser :: PC.GenParser Char st Action
 actionParser = do
     whitespace
-    PC.char '@'
+    void $ PC.char '@'
     PC.choice [PC.try recentParser
         , PC.try budgetEntryParser
         , PC.try budgetsParser
@@ -111,19 +111,19 @@ actionParser = do
 
 recentParser :: PC.GenParser Char st Action
 recentParser = do
-    PC.string "recent"
+    void $ PC.string "recent"
     whitespace
     c <- nonwhitespace
     return $ RecentExpenseReport (mkCategory c)
 
 budgetsParser :: PC.GenParser Char st Action
 budgetsParser = do
-    PC.string "budgets"
+    void $ PC.string "budgets"
     return BudgetsReport
 
 budgetEntryParser :: PC.GenParser Char st Action
 budgetEntryParser = do
-    PC.string "budget"
+    void $ PC.string "budget"
     whitespace
     c <- mkCategory <$> nonwhitespace
     whitespace

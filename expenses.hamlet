@@ -5,11 +5,11 @@
         <td>Spent
         <td># Expenses
         <td>Average Expense
-    $forall (cat, spent, count, avg) <- rows
+    $forall (cat, spent, numExpenses, avg) <- rows
         <tr>
             <td>
                 <a class=stress href="/expenses/#{toPathPiece cat}">
                     #{toPathPiece cat}
             <td>#{showDollars spent}
-            <td>#{show count}
+            <td>#{show numExpenses}
             <td>#{showDollars avg}

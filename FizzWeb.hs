@@ -3,13 +3,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module FizzWeb where
+module Main where
 
 import Fizz
 import Fizz.Core
 import Fizz.Store
 
 import Control.Applicative
+import Control.Monad
 import Data.Char (toLower)
 import Data.List
 import Data.Maybe
@@ -25,10 +26,9 @@ data Fizz = Fizz T.Text
 main :: IO ()
 main = do
     args <- getArgs
-    if "--debug" `elem` args then
-        debug
-    else
-        prod args
+    if "--debug" `elem` args
+        then debug
+        else prod args
 
 prod :: [String] -> IO ()
 prod (host:port:_) =
@@ -76,10 +76,10 @@ getBudgetsR = defaultLayout $ do
     setTitle "Fizckle"
     allBudgets <- liftIO $ filter ((/=0) . getBudgetValue) <$> fmap snd <$> readBudget
     let categories = fmap getBudgetCategory allBudgets
-    spent <- liftIO . sequence
+    spentEach <- liftIO . sequence
         . fmap (\c -> sum . fmap getExpenseValue <$> readCurrentExpenses c)
         $ categories
-    let totals = zip categories spent
+    let totals = zip categories spentEach
     let (budgets, incomes) = partition ((>0) . getBudgetValue) allBudgets
     let totalBudget = sum . fmap getMonthlyValue $ budgets
     let totalIncome = sum . fmap getMonthlyValue $ incomes
@@ -89,15 +89,15 @@ getBudgetsR = defaultLayout $ do
     toWidget $(juliusFile "budgets.julius")
 
 getBudgetR :: Category -> Handler Html
-getBudgetR c = defaultLayout [whamlet|Content!|]
+getBudgetR _ = defaultLayout [whamlet|Content!|]
 
 putBudgetR :: Category -> Handler ()
 putBudgetR c = do
-    mv <- lookupPostParam $ "value"
-    mf <- lookupPostParam $ "freq"
+    mv <- lookupPostParam "value"
+    mf <- lookupPostParam "freq"
     let mbe = newBudgetEntry c <$> (mv >>= maybeReadT) <*> (mf >>= maybeReadT)
     case mbe of
-        Just be -> liftIO $ writeBudgetEntry be >> return ()
+        Just be -> liftIO $ void (writeBudgetEntry be)
         Nothing -> return ()
 
 getExpensesR :: Handler Html
@@ -144,7 +144,7 @@ getExpenseCategoryR cat = defaultLayout $ do
             . sortBy (\e1 e2 -> compare (getExpenseTime e2) (getExpenseTime e1))
 
 postExpenseCategoryR :: Category -> Handler ()
-postExpenseCategoryR c = undefined
+postExpenseCategoryR _ = undefined
 
 maybeReadT :: Read a => T.Text -> Maybe a
 maybeReadT s =

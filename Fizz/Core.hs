@@ -146,9 +146,6 @@ defaultEntry = ExpenseEntry
     , getExpenseTime = LocalTime (ModifiedJulianDay 1) midnight
     }
 
-remCat :: Category -> Budget -> Budget
-remCat c = filter ((/= c) . fst)
-
 getMonthlyValue :: BudgetEntry -> Double
 getMonthlyValue be =
     case getBudgetFrequency be of
@@ -187,13 +184,6 @@ printLongBudget budget =
 budgetTotal :: Budget -> Double
 budgetTotal = fromIntegerToDouble
     . round . sum . fmap (getBudgetValue . snd)
-
-getCanonicalExpenseTag :: ExpenseEntry -> Tag
-getCanonicalExpenseTag e =
-    if null (getExpenseTag e) then
-        "UNCATEGORIZED"
-    else
-        head . getExpenseTag $ e
 
 newBudgetEntry :: Category -> Double -> Frequency -> BudgetEntry
 newBudgetEntry c v = BudgetEntry v c

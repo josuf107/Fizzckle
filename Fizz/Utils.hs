@@ -1,8 +1,6 @@
 module Fizz.Utils where
 
-import Data.List
 import Data.Time
-import System.Directory
 
 getTime :: IO LocalTime
 getTime = do

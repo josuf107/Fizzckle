@@ -5,14 +5,10 @@ import Fizz.Utils
 
 import Control.Applicative
 import Control.Monad
-import Data.Char
 import Data.List
 import Data.Maybe
-import Data.Time
-import Data.Time.Calendar.WeekDate
 import System.Directory
 import System.FilePath
-import Text.Printf
 import qualified Data.ByteString.Char8 as BS
 
 dataDir :: FilePath
@@ -33,6 +29,9 @@ expenseDir c = categoryDir c </> "expenses"
 promiseDir :: Category -> FilePath
 promiseDir c = categoryDir c </> "promises"
 
+promise :: Category -> FilePath
+promise c = promiseDir c </> show c
+
 strictWrite :: Bool -> FilePath -> String -> IO ()
 strictWrite create fn s = do
     when create (createDirectoryIfMissing True (takeDirectory fn))
@@ -42,10 +41,9 @@ strictRead :: Bool -> FilePath -> IO (Maybe String)
 strictRead create fn = do
     when create (createDirectoryIfMissing True (takeDirectory fn))
     exists <- doesFileExist fn
-    if exists then
-        liftM (Just . BS.unpack) $ BS.readFile fn
-    else
-        return Nothing
+    if exists
+        then Just . BS.unpack <$> BS.readFile fn
+        else return Nothing
 
 readCategories :: IO [Category]
 readCategories = fmap mkCategory <$> getVisibleContents True dataDir
@@ -60,12 +58,9 @@ getVisibleContents create d =
     else
         do
             e <- doesDirectoryExist d
-            if e then
-                do
-                    fs <- getDirectoryContents d
-                    return $ getVisible fs
-            else
-                return []
+            if e
+                then getVisible <$> getDirectoryContents d
+                else return []
     where
         getVisible :: [FilePath] -> [FilePath]
         getVisible = filter (not . isPrefixOf ".")
@@ -129,32 +124,18 @@ recentExpenseReport c = do
 
 writePromise :: ExpenseEntry -> IO Category
 writePromise e = do
-    strictWrite True promise (show e)
+    strictWrite True (promise c) (show e)
     return c
     where
-        c :: Category
         c = getExpenseCategory e
-        promise :: FilePath
-        promise = promiseDir c </> show c
 
 readPromises :: Category -> IO [ExpenseEntry]
-readPromises c = do
-    efs <- getVisibleContents False d
-    es <- sequence
-        . fmap (strictRead False
-            . (d </>)) $ efs
-    return . catMaybes . fmap maybeRead . catMaybes $ es
-    where d = promiseDir c
+readPromises c = readExpenses (promiseDir c)
 
 fulfillPromise :: ExpenseEntry -> IO ()
 fulfillPromise e = do
     writeExpenseEntry e
-    removeFile promise
-    where
-        c :: Category
-        c = getExpenseCategory e
-        promise :: FilePath
-        promise = promiseDir c </> show c
+    removeFile . promise . getExpenseCategory $ e
 
 writeExpenseEntry :: ExpenseEntry -> IO ()
 writeExpenseEntry e = do
