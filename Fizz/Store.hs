@@ -146,6 +146,17 @@ writeExpenseEntry e = do
     let cur = currentExpenseDir c </> expenseFileName e'
     strictWrite True cur (show e')
 
+tickExpenseEntry :: ExpenseEntry -> IO ()
+tickExpenseEntry e = do
+    let c = getExpenseCategory e
+    let cur = currentExpenseDir c </> expenseFileName e
+    removeFile cur
+
+tickExpenseCategory :: Category -> IO ()
+tickExpenseCategory c = do
+    es <- getVisibleContents False (currentExpenseDir c)
+    mapM_ removeFile . fmap (currentExpenseDir c </>) $ es
+
 readExpenses :: FilePath -> IO [ExpenseEntry]
 readExpenses d = do
     efs <- getVisibleContents False d

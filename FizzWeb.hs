@@ -43,7 +43,7 @@ debug = warp 3000 (Fizz "localhost")
 
 mkYesod "Fizz" [parseRoutes|
 /budgets BudgetsR GET
-/budgets/#Category BudgetR GET PUT
+/budgets/#Category BudgetR GET PUT DELETE
 /expenses ExpensesR GET
 /expenses/#Category ExpenseCategoryR GET POST
 /dash/fizz FizzR POST
@@ -99,6 +99,9 @@ putBudgetR c = do
     case mbe of
         Just be -> liftIO $ void (writeBudgetEntry be)
         Nothing -> return ()
+
+deleteBudgetR :: Category -> Handler ()
+deleteBudgetR = liftIO . tickExpenseCategory
 
 getExpensesR :: Handler Html
 getExpensesR = defaultLayout $ do

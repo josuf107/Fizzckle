@@ -48,7 +48,7 @@
         <td>Spent
         <td>Budgeted
         <td>Frequency
-        <td colspan=2>
+        <td colspan=3>
     $forall budget <- budgets
         <tr>
             <td>
@@ -62,6 +62,7 @@
             <td class="freq" onclick="set('#{toPathPiece $ getBudgetCategory budget}', '#{getBudgetValue budget}', '#{show $ next $ getBudgetFrequency budget}')">#{show $ getBudgetFrequency budget}
             <td class="button" onclick="set('#{toPathPiece $ getBudgetCategory budget}', '#{(getBudgetValue budget) + 5}', '#{show $ getBudgetFrequency budget}')">+
             <td class="button" onclick="set('#{toPathPiece $ getBudgetCategory budget}', '#{(getBudgetValue budget) - 5}', '#{show $ getBudgetFrequency budget}')">-
+            <td class="button" onclick="tick('#{toPathPiece $ getBudgetCategory budget}')">tick
 <p>
     Total <span class=stress>#{showDollars totalBudget}</span> of <span
     class=stress>#{showDollars $ abs $ totalIncome}</span> leaving <span

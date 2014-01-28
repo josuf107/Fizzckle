@@ -8,6 +8,14 @@ function set (cat, val, freq) {
     return false;
 }
 
+function tick (cat) {
+    $.ajax({
+        url: "http://" + appRoot + "/budgets/" + cat,
+        type: "delete"
+    }).done(doRender);
+    return false;
+}
+
 function newIncome () {
     arr = $(this).serializeArray();
     set(arr[0].value, -1 * parseFloat(arr[2].value), arr[1].value);
