@@ -79,3 +79,16 @@ Fizzckle does not keep time automatically. When you wish for the current
 budget cycle to be cleared, you must click "tick" in the web interface.
 The reason for this is that I sometimes neglect to enter expenses in the
 budget period, so I don't want it to advance automatically.
+
+When calculating the monthly value for the budget planner at /budgets,
+Fizzckle assumes 4.5 weeks per month. The reason for this is that
+Fizzckle allows you to tick weekly budgets at your own disgression. I
+have some weekly budgets that I tick on Saturday and some that I tick on
+Monday. Therefore, Fizzckle does not know how many ticks will occur in a
+given month for a weekly budget. I use 4.5 because it's easy to
+remember, and,  over time, it's an overestimate (it equates to a 378 day
+year). For a non-leap year, the number of weeks per month is more like
+365 / 12 / 7 = 4.3452. Anyway, upshot of all this is that if you have a
+weekly budget of $100 for clothes (no judgement) and make $500 a month,
+at the bottom of the budgets page it will say "Total $450 of $500
+leaving $50.00."
