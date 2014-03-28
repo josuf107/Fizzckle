@@ -75,9 +75,7 @@ file and expense history. Entering an expense writes a new expense file
 in data/BUDGETNAME/expenses/timestampedfile and an identical file in
 data/BUDGETNAME/current/timestampedfile.
 
-Unfortunately, Fizzckle does not keep time automatically. When you wish
-for the current budget cycle to be cleared, you must manually clear out
-the 'current' directory from the budget folder. The reason for this is
-that I sometimes neglect to enter expenses in the budget period, so I
-don't want it to advance automatically. One remedy would be to add a
-control to the web interface to advance the budget period.
+Fizzckle does not keep time automatically. When you wish for the current
+budget cycle to be cleared, you must click "tick" in the web interface.
+The reason for this is that I sometimes neglect to enter expenses in the
+budget period, so I don't want it to advance automatically.
