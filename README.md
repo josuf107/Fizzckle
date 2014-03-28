@@ -16,7 +16,7 @@ $ cabal install cabal-dev
 $ cabal-dev install
 ```
 
-That should do it.
+That should do it. The last step will take a long time.
 
 Running
 =======
@@ -32,6 +32,26 @@ Or for realz with
 ```
 $ cabal-dev/bin/FizzWeb example.com port
 ```
+
+For Those New to Webapps
+------------------------
+
+You'll need to have a dedicated IP address for this to work properly.
+
+Options:
+
+*   Use something like
+    [dynamicdns](https://www.dnsdynamic.org/signup.php). This option is
+    free and pretty simple, but you'll have to leave your computer on
+    all the time and you might need to do port forwarding in your
+    router. Plus the domain is probably not going to be the prettiest.
+    Also, I've only ever run Fizzckle on Linux.
+*   Use a VPS service like
+    [linode](https://library.linode.com/getting-started). I use Linode
+    to host a number of webapps including Fizzckle, and while it does
+    cost some money it's a great solution. You'll still need a domain.
+    You could use something like dynamicdns to point to the VPS, or you
+    could purchase a domain.
 
 Usage
 =====
