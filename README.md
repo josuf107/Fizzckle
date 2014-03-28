@@ -45,13 +45,11 @@ Clicking a budget name in the table displays the expense report for that
 budget.
 
 The text messaging interface is a bit more complicated, but not too bad.
-You'll need to set up [Twilio](twilio) to point a phone number to the
-webapp at /dash/fizz (I just use a trial Twilio account for this since
-it's just me and one other person using it, but you'll need to verify
-every phone number you want to be able to text from). Once you've done
-that you can text the following commands:
-
-[twilio]: https://www.twilio.com/ "Twilio"
+You'll need to set up [Twilio](https://www.twilio.com) to point a phone
+number to the webapp at /dash/fizz (I just use a trial Twilio account
+for this since it's just me and one other person using it, but you'll
+need to verify every phone number you want to be able to text from).
+Once you've done that you can text the following commands:
 
 * `food` -> Fizzckle responds with the balance for the budget "food"
 * `5.25 food subway after swim practice` -> Fizzckle records a $5.25
