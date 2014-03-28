@@ -12,8 +12,10 @@ Navigate to the source root.
 
 ```
 $ cabal update
-$ cabal install cabal-dev
-$ cabal-dev install
+$ cabal install hsenv
+$ hsenv
+$ . .hsenv/bin/activate
+$ cabal install
 ```
 
 That should do it. The last step will take a long time.
@@ -24,13 +26,15 @@ Running
 Run locally with
 
 ```
-$ cabal-dev/bin/FizzWeb --debug
+$ . .hsenv/bin/activate
+$ FizzWeb --debug
 ```
 
 Or for realz with
 
 ```
-$ cabal-dev/bin/FizzWeb example.com port
+$ . .hsenv/bin/activate
+$ FizzWeb example.com port
 ```
 
 For Those New to Webapps
