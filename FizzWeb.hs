@@ -106,10 +106,12 @@ putBudgetR :: CategoryPiece -> Handler ()
 putBudgetR c = do
     mv <- lookupPostParam "value"
     mf <- lookupPostParam "freq"
+    mt <- lookupPostParam "type"
     let
         mbe = newBudgetEntry (unwrap c)
             <$> (mv >>= maybeReadT)
             <*> (mf >>= maybeReadT)
+            <*> (mt >>= maybeReadT)
     case mbe of
         Just be -> liftIO $ void (writeBudgetEntry be)
         Nothing -> return ()

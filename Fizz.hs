@@ -130,7 +130,7 @@ budgetEntryParser = do
     v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
     whitespace
     f <- frequencyParser
-    return . EnterBudget $ newBudgetEntry c v f
+    return . EnterBudget $ newBudgetEntry c v f Expense
 
 frequencyParser :: PC.GenParser Char st Frequency
 frequencyParser =

@@ -6,9 +6,11 @@ module Fizz.Core
     , Expenses
     , Frequency (Weekly, Monthly, Yearly)
     , BudgetEntry
+    , BudgetType(..)
     , getBudgetCategory
     , getBudgetValue
     , getBudgetFrequency
+    , getBudgetType
     , newBudgetEntry
     , ExpenseEntry
     , getExpenseValue
@@ -76,13 +78,19 @@ instance Cycle Frequency where
     next Monthly = Yearly
     next Yearly = Weekly
 
+data BudgetType
+    = Expense
+    | Income
+    | Savings
+    deriving (Show, Read, Eq)
+
 data BudgetEntry
     = BudgetEntry
         { getBudgetValue :: Double
         , getBudgetCategory :: Category
         , getBudgetFrequency :: Frequency
-        }
-    | InactiveBudget deriving(Show, Read)
+        , getBudgetType :: BudgetType
+        } deriving(Show, Read)
 
 data ExpenseEntry
     = ExpenseEntry
@@ -193,8 +201,8 @@ budgetTotal :: Budget -> Double
 budgetTotal = fromIntegerToDouble
     . round . sum . fmap (getBudgetValue . snd)
 
-newBudgetEntry :: Category -> Double -> Frequency -> BudgetEntry
-newBudgetEntry c v = BudgetEntry v c
+newBudgetEntry :: Category -> Double -> Frequency -> BudgetType -> BudgetEntry
+newBudgetEntry c v f t = BudgetEntry v c f t
 
 newPromise :: Category -> String -> ExpenseEntry
 newPromise c = tagExpense ".promise" . newExpenseEntry c 0

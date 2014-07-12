@@ -32,6 +32,9 @@ promiseDir c = categoryDir c </> "promises"
 promise :: Category -> FilePath
 promise c = promiseDir c </> show c
 
+savingsDir :: Category -> FilePath
+savingsDir c = categoryDir c </> "savings"
+
 strictWrite :: Bool -> FilePath -> String -> IO ()
 strictWrite create fn s = do
     when create (createDirectoryIfMissing True (takeDirectory fn))
@@ -94,23 +97,24 @@ readBudget = do
                 Just be -> Just (c, be)
 
 writeBudgetEntry :: BudgetEntry -> IO ()
-writeBudgetEntry be = strictWrite True bf (show be)
+writeBudgetEntry be = do
+    strictWrite True bf (show be)
+    -- TODO: Also write to budgets directory
     where
-        bf = budgetFile
-            . getBudgetCategory $ be
+        bf = budgetFile . getBudgetCategory $ be
 
 writeBudget :: Budget -> IO ()
 writeBudget = sequence_ . fmap (writeBudgetEntry . snd)
 
-addBudget :: Frequency -> Double -> Category -> IO ()
-addBudget f v c = do
-    let be = newBudgetEntry c v f
+addBudget :: Frequency -> Double -> Category -> BudgetType -> IO ()
+addBudget f v c t = do
+    let be = newBudgetEntry c v f t
     writeBudgetEntry be
 
-addMonthlyBudget :: Double -> Category -> IO ()
+addMonthlyBudget :: Double -> Category -> BudgetType -> IO ()
 addMonthlyBudget = addBudget Monthly
 
-addWeeklyBudget :: Double -> Category -> IO ()
+addWeeklyBudget :: Double -> Category -> BudgetType -> IO ()
 addWeeklyBudget = addBudget Weekly
 
 recentExpenseReport :: Category -> IO String
@@ -145,6 +149,9 @@ writeExpenseEntry e = do
     strictWrite True (primaryPath e') (show e')
     let cur = currentExpenseDir c </> expenseFileName e'
     strictWrite True cur (show e')
+    budgetType <- fmap getBudgetType <$> readBudgetEntry c
+    let save = savingsDir c </> expenseFileName e'
+    when (budgetType == Just Savings) (strictWrite True save (show e'))
 
 tickExpenseEntry :: ExpenseEntry -> IO ()
 tickExpenseEntry e = do

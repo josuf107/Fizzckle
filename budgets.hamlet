@@ -9,6 +9,7 @@
             <option value=Yearly>Yearly
         <br>
         <input type=text name=val id=val value=value>
+        <input type=hidden name=type id=type value=Income>
         <input type=submit id=new value=create>
 <table>
     <tr class=header>
@@ -41,6 +42,7 @@
             <option value=Yearly>Yearly
         <br>
         <input type=text name=val id=val value=value>
+        <input type=hidden name=type id=type value=Expense>
         <input type=submit id=new value=create>
 <table>
     <tr class=header>

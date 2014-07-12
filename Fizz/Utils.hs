@@ -19,3 +19,6 @@ maybeRead s =
         ((r,_):_) -> Just r
         _ -> Nothing
 
+ifxy :: Bool -> a -> a -> a
+ifxy True x _ = x
+ifxy _ _ y = y
