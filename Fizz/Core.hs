@@ -102,8 +102,7 @@ data WeekDate
 
 data MonthDate
     = MonthDate
-        { getMonthDateYear :: Integer
-        , getMonthDateMonth :: Int
+        { getMonthDateMonth :: Int
         , getMonthDateDom :: Int
         } deriving(Show, Read)
 
@@ -231,9 +230,9 @@ getExpenseYear = getWeekDateYear . getExpenseWeekDate
 getExpenseMonthDate :: ExpenseEntry -> MonthDate
 getExpenseMonthDate e =
     let
-        (year, month, dom) = toGregorian . localDay . getExpenseTime $ e
+        (_, month, dom) = toGregorian . localDay . getExpenseTime $ e
     in
-        MonthDate year month dom
+        MonthDate month dom
 
 getExpenseWeekDate :: ExpenseEntry -> WeekDate
 getExpenseWeekDate e =

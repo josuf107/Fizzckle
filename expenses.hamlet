@@ -8,8 +8,8 @@
     $forall (cat, spent, numExpenses, avg) <- rows
         <tr>
             <td>
-                <a class=stress href="/expenses/#{toPathPiece cat}">
-                    #{toPathPiece cat}
+                <a class=stress href="/expenses/#{categoryPath cat}">
+                    #{toPathPiece $ wrap cat}
             <td>#{showDollars spent}
             <td>#{show numExpenses}
             <td>#{showDollars avg}

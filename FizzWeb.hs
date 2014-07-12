@@ -43,15 +43,26 @@ debug = warp 3000 (Fizz "localhost")
 
 mkYesod "Fizz" [parseRoutes|
 /budgets BudgetsR GET
-/budgets/#Category BudgetR GET PUT DELETE
+/budgets/#CategoryPiece BudgetR GET PUT DELETE
 /expenses ExpensesR GET
-/expenses/#Category ExpenseCategoryR GET POST
+/expenses/#CategoryPiece ExpenseCategoryR GET POST
 /dash/fizz FizzR POST
 |]
 
-instance PathPiece Category where
-    toPathPiece = T.pack . fmap toLower . pretty
-    fromPathPiece = Just . mkCategory . T.unpack
+newtype CategoryPiece = CategoryPiece Category deriving (Show, Eq, Read)
+
+wrap :: Category -> CategoryPiece
+wrap = CategoryPiece
+
+unwrap :: CategoryPiece -> Category
+unwrap (CategoryPiece c) = c
+
+categoryPath :: Category -> T.Text
+categoryPath = T.pack . fmap toLower . pretty
+
+instance PathPiece CategoryPiece where
+    toPathPiece = categoryPath . unwrap
+    fromPathPiece = Just . wrap . mkCategory . T.unpack
 
 instance Yesod Fizz where
     approot = ApprootMaster (\(Fizz f) -> f)
@@ -63,12 +74,12 @@ postFizzR = do
     $(logDebug) $ "Request: " `T.append` body
     let action = parseFizz . T.unpack $ body
     content <- liftIO . doFizz $ action
-    let responseBody = wrap . T.pack $ content
+    let responseBody = wrapBody . T.pack $ content
     $(logDebug) $ "Response: " `T.append` responseBody
     return . RepXml . toContent $ responseBody
     where
-        wrap :: T.Text -> T.Text
-        wrap c = "<Response><Sms>"
+        wrapBody :: T.Text -> T.Text
+        wrapBody c = "<Response><Sms>"
             `T.append` c `T.append` "</Sms></Response>"
 
 getBudgetsR :: Handler Html
@@ -88,20 +99,23 @@ getBudgetsR = defaultLayout $ do
     addScriptRemote "http://code.jquery.com/jquery-1.10.2.min.js"
     toWidget $(juliusFile "budgets.julius")
 
-getBudgetR :: Category -> Handler Html
+getBudgetR :: CategoryPiece -> Handler Html
 getBudgetR _ = defaultLayout [whamlet|Content!|]
 
-putBudgetR :: Category -> Handler ()
+putBudgetR :: CategoryPiece -> Handler ()
 putBudgetR c = do
     mv <- lookupPostParam "value"
     mf <- lookupPostParam "freq"
-    let mbe = newBudgetEntry c <$> (mv >>= maybeReadT) <*> (mf >>= maybeReadT)
+    let
+        mbe = newBudgetEntry (unwrap c)
+            <$> (mv >>= maybeReadT)
+            <*> (mf >>= maybeReadT)
     case mbe of
         Just be -> liftIO $ void (writeBudgetEntry be)
         Nothing -> return ()
 
-deleteBudgetR :: Category -> Handler ()
-deleteBudgetR = liftIO . tickExpenseCategory
+deleteBudgetR :: CategoryPiece -> Handler ()
+deleteBudgetR = liftIO . tickExpenseCategory . unwrap
 
 getExpensesR :: Handler Html
 getExpensesR = defaultLayout $ do
@@ -131,9 +145,9 @@ getExpensesR = defaultLayout $ do
             . fmap getExpenseValue 
             $ es
 
-getExpenseCategoryR :: Category -> Handler Html
+getExpenseCategoryR :: CategoryPiece -> Handler Html
 getExpenseCategoryR cat = defaultLayout $ do
-    expenses <- liftIO $ readAllExpenses cat
+    expenses <- liftIO . readAllExpenses . unwrap $ cat
     let rows = toRows expenses
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "expense.hamlet")
@@ -146,7 +160,7 @@ getExpenseCategoryR cat = defaultLayout $ do
         toRows = fmap toRow
             . sortBy (\e1 e2 -> compare (getExpenseTime e2) (getExpenseTime e1))
 
-postExpenseCategoryR :: Category -> Handler ()
+postExpenseCategoryR :: CategoryPiece -> Handler ()
 postExpenseCategoryR _ = undefined
 
 maybeReadT :: Read a => T.Text -> Maybe a
