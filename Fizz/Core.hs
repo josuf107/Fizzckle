@@ -76,30 +76,39 @@ instance Cycle Frequency where
     next Monthly = Yearly
     next Yearly = Weekly
 
-data BudgetEntry    = BudgetEntry   { getBudgetValue :: Double
-                                    , getBudgetCategory :: Category
-                                    , getBudgetFrequency :: Frequency
-                                    }
-                    | InactiveBudget deriving(Show, Read)
+data BudgetEntry
+    = BudgetEntry
+        { getBudgetValue :: Double
+        , getBudgetCategory :: Category
+        , getBudgetFrequency :: Frequency
+        }
+    | InactiveBudget deriving(Show, Read)
 
-data ExpenseEntry = ExpenseEntry    { getExpenseTag :: [Tag]
-                                    , getExpenseCategory :: Category
-                                    , getExpenseValue :: Double
-                                    , getExpenseDescription :: String
-                                    , getExpenseTime :: LocalTime
-                                    } deriving(Show, Read)
+data ExpenseEntry
+    = ExpenseEntry
+        { getExpenseTag :: [Tag]
+        , getExpenseCategory :: Category
+        , getExpenseValue :: Double
+        , getExpenseDescription :: String
+        , getExpenseTime :: LocalTime
+        } deriving(Show, Read)
 
-data WeekDate = WeekDate    { getWeekDateYear :: Integer
-                            , getWeekDateWeek :: Int
-                            , getWeekDateDow :: Int
-                            } deriving(Show, Read)
+data WeekDate
+    = WeekDate
+        { getWeekDateYear :: Integer
+        , getWeekDateWeek :: Int
+        , getWeekDateDow :: Int
+        } deriving(Show, Read)
 
-data MonthDate = MonthDate  { getMonthDateYear :: Integer
-                            , getMonthDateMonth :: Int
-                            , getMonthDateDom :: Int
-                            } deriving(Show, Read)
+data MonthDate
+    = MonthDate
+        { getMonthDateYear :: Integer
+        , getMonthDateMonth :: Int
+        , getMonthDateDom :: Int
+        } deriving(Show, Read)
 
-data Action = Error String
+data Action
+    = Error String
     | Future Double Double Double Integer
     | BudgetReport Category
     | BudgetsReport
@@ -244,11 +253,10 @@ nearest f = do
     let (year, _, dow) = toWeekDate . localDay $ time
     let (_, month, dom) = toGregorian . localDay $ time
     let doy = toDoy year month dom
-    case f of
-        Weekly -> return $ (6 - dow) `mod` 7
-        Monthly -> return $
-            gregorianMonthLength year month - dom
-        Yearly -> return $ 365 - doy
+    return $ case f of
+        Weekly -> (6 - dow) `mod` 7
+        Monthly -> gregorianMonthLength year month - dom
+        Yearly -> 365 - doy
     where
         toDoy :: Integer -> Int -> Int -> Int
         toDoy year month dom = (+dom)
