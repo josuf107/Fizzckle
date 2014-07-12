@@ -1,8 +1,8 @@
 var appRoot = window.location.host;
-function set (cat, val, freq) {
+function set (cat, val, freq, type) {
     $.ajax({
         url: "http://" + appRoot + "/budgets/" + cat,
-        data: { "value" : val , "freq" : freq },
+        data: { "value" : val , "freq" : freq , "type" : type},
         type: "put"
     }).done(doRender);
     return false;
@@ -16,15 +16,24 @@ function tick (cat) {
     return false;
 }
 
+function realize (cat, val) {
+    set("realized" + cat, val, "Monthly", "Income");
+    $.ajax({
+        url: "http://" + appRoot + "/savings/" + cat,
+        type: "delete"
+    }).done(doRender);
+    return false;
+}
+
 function newIncome () {
     arr = $(this).serializeArray();
-    set(arr[0].value, -1 * parseFloat(arr[2].value), arr[1].value);
+    set(arr[0].value, arr[2].value, arr[1].value, arr[3].value);
     return false;
 }
 
 function newBudget () {
     arr = $(this).serializeArray();
-    set(arr[0].value, arr[2].value, arr[1].value);
+    set(arr[0].value, arr[3].value, arr[1].value, arr[2].value);
     return false;
 }
 

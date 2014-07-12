@@ -164,6 +164,11 @@ tickExpenseCategory c = do
     es <- getVisibleContents False (currentExpenseDir c)
     mapM_ removeFile . fmap (currentExpenseDir c </>) $ es
 
+clearSavings :: Category -> IO ()
+clearSavings c = do
+    savings <- getVisibleContents False (savingsDir c)
+    mapM_ removeFile . fmap (savingsDir c </>) $ savings
+
 readExpenses :: FilePath -> IO [ExpenseEntry]
 readExpenses d = do
     efs <- getVisibleContents False d
@@ -174,6 +179,9 @@ readExpenses d = do
 
 readCurrentExpenses :: Category -> IO [ExpenseEntry]
 readCurrentExpenses c = readExpenses (currentExpenseDir c)
+
+readSavings :: Category -> IO [ExpenseEntry]
+readSavings = readExpenses . savingsDir
 
 readAllExpenses :: Category -> IO [ExpenseEntry]
 readAllExpenses c = readExpenses (expenseDir c)

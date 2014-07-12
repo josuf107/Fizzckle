@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# languAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -12,6 +12,7 @@ import Fizz.Store
 import Control.Applicative
 import Control.Monad
 import Data.Char (toLower)
+import Data.Function
 import Data.List
 import Data.Maybe
 import qualified Data.Text as T
@@ -44,6 +45,7 @@ debug = warp 3000 (Fizz "localhost")
 mkYesod "Fizz" [parseRoutes|
 /budgets BudgetsR GET
 /budgets/#CategoryPiece BudgetR GET PUT DELETE
+/savings/#CategoryPiece SavingsR DELETE
 /expenses ExpensesR GET
 /expenses/#CategoryPiece ExpenseCategoryR GET POST
 /dash/fizz FizzR POST
@@ -91,9 +93,18 @@ getBudgetsR = defaultLayout $ do
         . fmap (\c -> sum . fmap getExpenseValue <$> readCurrentExpenses c)
         $ categories
     let totals = zip categories spentEach
-    let (budgets, incomes) = partition ((>0) . getBudgetValue) allBudgets
-    let totalBudget = sum . fmap getMonthlyValue $ budgets
+    let
+        (budgets, (incomes, savings))
+            = (\(b, is) -> (b, partition ((==Income) . getBudgetType) is))
+            . partition ((==Expense) . getBudgetType)
+            $ allBudgets
+    let totalBudget = sum . fmap getMonthlyValue $ (budgets ++ savings)
     let totalIncome = sum . fmap getMonthlyValue $ incomes
+    totalSaved <- liftIO
+        . sequence
+        . fmap (\c -> sum . fmap getExpenseValue <$> readSavings c)
+        $ categories
+    let savedTotals = zip categories totalSaved
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
     addScriptRemote "http://code.jquery.com/jquery-1.10.2.min.js"
@@ -119,6 +130,9 @@ putBudgetR c = do
 deleteBudgetR :: CategoryPiece -> Handler ()
 deleteBudgetR = liftIO . tickExpenseCategory . unwrap
 
+deleteSavingsR :: CategoryPiece -> Handler ()
+deleteSavingsR = liftIO . clearSavings . unwrap
+
 getExpensesR :: Handler Html
 getExpensesR = defaultLayout $ do
     cats <- liftIO readCategories
@@ -143,8 +157,8 @@ getExpensesR = defaultLayout $ do
         meanSpent :: [ExpenseEntry] -> Double
         meanSpent [] = 0
         meanSpent es = (/ (fromIntegral . length $ es))
-            . sum 
-            . fmap getExpenseValue 
+            . sum
+            . fmap getExpenseValue
             $ es
 
 getExpenseCategoryR :: CategoryPiece -> Handler Html
@@ -160,7 +174,7 @@ getExpenseCategoryR cat = defaultLayout $ do
             , show . localDay . getExpenseTime $ e)
         toRows :: [ExpenseEntry] -> [(Double, String, String)]
         toRows = fmap toRow
-            . sortBy (\e1 e2 -> compare (getExpenseTime e2) (getExpenseTime e1))
+            . sortBy (compare `on` getExpenseTime)
 
 postExpenseCategoryR :: CategoryPiece -> Handler ()
 postExpenseCategoryR _ = undefined
