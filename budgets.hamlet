@@ -27,7 +27,7 @@
                 <td>#{showDollars spent}
             $nothing
                 <td>ERROR
-            <td>#{showDollars $ abs $ getBudgetValue income}
+            <td>#{showDollars $ getBudgetValue income}
             <td class="freq" onclick="set('#{categoryPath $ getBudgetCategory income}', '#{getBudgetValue income}', '#{show $ next $ getBudgetFrequency income}', 'Income')">#{show $ getBudgetFrequency income}
             <td class="button" onclick="set('#{categoryPath $ getBudgetCategory income}', '#{(getBudgetValue income) - 5}', '#{show $ getBudgetFrequency income}', 'Income')">+
             <td class="button" onclick="set('#{categoryPath $ getBudgetCategory income}', '#{(getBudgetValue income) + 5}', '#{show $ getBudgetFrequency income}', 'Income')">-
