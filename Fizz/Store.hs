@@ -162,14 +162,19 @@ tickExpenseEntry e = do
 tickExpenseCategory :: Category -> IO ()
 tickExpenseCategory c = do
     cs <- readCurrentExpenses c
-    let tot = sum . fmap getExpenseValue $ cs 
-    mbe <- readBudgetEntry (mkCategory "rollover")
-    let nbe = case mbe of
-	 Nothing -> newBudgetEntry (mkCategory "rollover") tot Monthly Income
-	 Just be -> be { getBudgetValue = getBudgetValue be + tot }
-    writeBudgetEntry nbe
+    let tot = sum . fmap getExpenseValue $ cs
+    mbe <- readBudgetEntry c
+    let v = maybe 0 (subtract tot . getBudgetValue) mbe
+    mr <- readBudgetEntry (mkCategory "rollover")
+    let nr = maybe (newRollover v) (addRollover v) mr
+    writeBudgetEntry nr
     es <- getVisibleContents False (currentExpenseDir c)
     mapM_ removeFile . fmap (currentExpenseDir c </>) $ es
+    where
+        newRollover :: Double -> BudgetEntry
+        newRollover v = newBudgetEntry (mkCategory "rollover") v Monthly Income
+        addRollover :: Double -> BudgetEntry -> BudgetEntry
+        addRollover v r = r { getBudgetValue = getBudgetValue r + v }
 
 clearSavings :: Category -> IO ()
 clearSavings c = do
