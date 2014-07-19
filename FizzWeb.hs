@@ -151,7 +151,7 @@ getExpensesR = defaultLayout $ do
             )
         toRows :: [(Category, [ExpenseEntry])]
             -> [(Category, Double, Int, Double)]
-        toRows = sortBy (\(_, t1, _, _) (_, t2, _, _) -> compare t1 t2)
+        toRows = sortBy (\(_, t1, _, _) (_, t2, _, _) -> compare t2 t1)
             . filter (\(_, _, n, _) -> n > 0)
             . fmap toRow
         meanSpent :: [ExpenseEntry] -> Double
@@ -174,6 +174,7 @@ getExpenseCategoryR cat = defaultLayout $ do
             , show . localDay . getExpenseTime $ e)
         toRows :: [ExpenseEntry] -> [(Double, String, String)]
         toRows = fmap toRow
+            . reverse
             . sortBy (compare `on` getExpenseTime)
 
 postExpenseCategoryR :: CategoryPiece -> Handler ()
