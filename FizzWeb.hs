@@ -151,7 +151,7 @@ getExpensesR = defaultLayout $ do
             )
         toRows :: [(Category, [ExpenseEntry])]
             -> [(Category, Double, Int, Double)]
-        toRows = sortBy (\(_, t1, _, _) (_, t2, _, _) -> compare t2 t1)
+        toRows = sortBy (\(_, t1, _, _) (_, t2, _, _) -> compare t1 t2)
             . filter (\(_, _, n, _) -> n > 0)
             . fmap toRow
         meanSpent :: [ExpenseEntry] -> Double
