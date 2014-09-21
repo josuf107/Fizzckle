@@ -57,6 +57,18 @@ import Data.Time
 import Data.Time.Calendar.WeekDate
 import Text.Printf
 
+type Journal = [(LocalTime, Entry)]
+
+data Entry
+    = Budget BudgetEntry
+    | Spend ExpenseEntry
+    | Save ExpenseEntry
+    | Earn ExpenseEntry
+    | Realize ExpenseEntry
+    | Undo Entry
+    | Redo Entry
+    deriving (Show, Eq)
+
 type Tag = String
 
 data Category   = Uncategorized
@@ -80,7 +92,6 @@ instance Cycle Frequency where
 
 data BudgetType
     = Expense
-    | Income
     | Savings
     deriving (Show, Read, Eq)
 
@@ -90,7 +101,7 @@ data BudgetEntry
         , getBudgetCategory :: Category
         , getBudgetFrequency :: Frequency
         , getBudgetType :: BudgetType
-        } deriving(Show, Read)
+        } deriving(Show, Read, Eq)
 
 data ExpenseEntry
     = ExpenseEntry
@@ -99,7 +110,7 @@ data ExpenseEntry
         , getExpenseValue :: Double
         , getExpenseDescription :: String
         , getExpenseTime :: LocalTime
-        } deriving(Show, Read)
+        } deriving(Show, Read, Eq)
 
 data WeekDate
     = WeekDate
