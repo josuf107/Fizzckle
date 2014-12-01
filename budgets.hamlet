@@ -36,8 +36,8 @@
             <td class="button" onclick="tick('#{categoryPath $ getBudgetCategory budget}')">tick
 <p>
     Total <span class=stress>#{showDollars totalBudget}</span> of <span
-    class=stress>#{showDollars totalIncome}</span> leaving <span
-    class=stress>#{showDollars $ totalIncome - totalBudget}</span>
+    class=stress>#{showDollars disposable}</span> leaving <span
+    class=stress>#{showDollars $ disposable - totalBudget}</span>
 <h1>Savings
 <table>
     <tr class=header>

@@ -31,6 +31,9 @@ module Fizz.Core
     , totalSpent
     , totalEarned
     , totalSaved
+    , totalAvailableSavings
+    , totalRealized
+    , totalDisposable
     , isRealize
     , isSpend
     , isSave
@@ -226,8 +229,14 @@ totalSpent = total isSpend (\(Spend e) -> e)
 totalSaved :: Journal -> Double
 totalSaved = total isSave (\(Save e) -> e)
 
+totalAvailableSavings :: Journal -> Double
+totalAvailableSavings j = totalSaved j - totalRealized j
+
 totalRealized :: Journal -> Double
 totalRealized = total isRealize (\(Realize e) -> e)
+
+totalDisposable :: Journal -> Double
+totalDisposable j = totalEarned j - totalSpent j - totalAvailableSavings j
 
 recentExpenseReport :: Category -> Journal -> String
 recentExpenseReport c

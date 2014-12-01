@@ -104,6 +104,8 @@ getBudgetsR = defaultLayout $ do
             $ allBudgets
     let totalBudget = sum . fmap getMonthlyValue $ (budgets ++ savings)
     let totalIncome = totalEarned journal
+    let totalUsed = totalSpent journal
+    let disposable = totalDisposable journal
     let savedTotals = fmap (\(c, j) -> (c, totalSaved j)) . Fizz.categories $ journal
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
@@ -160,8 +162,9 @@ getExpensesR = defaultLayout $ do
         groupExpenses
             = M.toAscList
             . M.fromListWith (++)
-            . fmap (\(Spend e) -> (getExpenseCategory e, [e]))
-            . filter isSpend
+            . fmap (\e -> (getExpenseCategory e, [e]))
+            . catMaybes
+            . fmap extractEntry
             . fmap snd
         toRow :: (Category, [ExpenseEntry]) -> (Category, Double, Int, Double)
         toRow (c, es) =
@@ -182,14 +185,22 @@ getExpensesR = defaultLayout $ do
             . fmap getExpenseValue
             $ es
 
+extractEntry :: Entry -> Maybe ExpenseEntry
+extractEntry (Spend e) = Just e
+extractEntry (Save e) = Just e
+extractEntry _ = Nothing
+
 getExpenseCategoryR :: CategoryPiece -> Handler Html
 getExpenseCategoryR cat = defaultLayout $ do
     journal <- liftIO loadJournal
-    let expenses = fmap (\(t, Spend e) -> (t, e)) . filter (\e -> getCategory (snd e) == unwrap cat && isSpend (snd e)) $ journal
+    let expenses = catMaybes . maybe [] (fmap (\(t, e) -> maybe Nothing (Just . (,) t) (extractEntry e))) . lookup (unwrap cat) . categories $ journal
     let rows = toRows expenses
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "expense.hamlet")
     where
+        maybeSnd :: (a, Maybe b) -> Maybe (a, b)
+        maybeSnd (a, Just b) = Just (a, b)
+        maybeSnd (a, Nothing) = Nothing
         toRow :: (Timestamped ExpenseEntry) -> (Double, String, String)
         toRow e = (getExpenseValue . snd $ e
             , getExpenseDescription . snd $ e
