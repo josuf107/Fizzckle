@@ -18,8 +18,27 @@ module Fizz.Core
         , getBudgetCategory
         , getBudgetFrequency
         , getBudgetType
-    , Frequency
+        , newBudgetEntry
+    , BudgetType(..)
+    , Frequency(..)
     , recentExpenseReport
+    , printBudgetReport
+    , printCategory
+    , budgetCategory
+    , spendCategory
+    , mostRecentBudgets
+    , getMonthlyValue
+    , totalSpent
+    , totalEarned
+    , totalSaved
+    , isRealize
+    , isSpend
+    , isSave
+    , isBudget
+    , isEarn
+    , getCategory
+    , categories
+    , next
     )
 where
 
@@ -29,6 +48,7 @@ import Control.Applicative
 import Data.Char
 import Data.Function
 import Data.List
+import qualified Data.Map as M
 import Data.Time
 import Data.Time.Calendar.WeekDate
 
@@ -48,7 +68,7 @@ data Entry
 type Tag = String
 
 data Category   = Uncategorized
-                | Category String deriving (Show, Read, Eq)
+                | Category String deriving (Show, Read, Eq, Ord)
 
 type Budget = [(Category, BudgetEntry)]
 
@@ -190,8 +210,24 @@ nearest f = do
             . sum
             . fmap (gregorianMonthLength year) $ [1..month - 1]
 
-totalSpent :: Expenses -> Double
-totalSpent = sum . fmap getExpenseValue
+total :: (Entry -> Bool) -> (Entry -> ExpenseEntry) -> Journal -> Double
+total test extract
+    = sum
+    . fmap (getExpenseValue . extract)
+    . filter test
+    . fmap snd
+
+totalEarned :: Journal -> Double
+totalEarned = total isEarn (\(Earn e) -> e)
+
+totalSpent :: Journal -> Double
+totalSpent = total isSpend (\(Spend e) -> e)
+
+totalSaved :: Journal -> Double
+totalSaved = total isSave (\(Save e) -> e)
+
+totalRealized :: Journal -> Double
+totalRealized = total isRealize (\(Realize e) -> e)
 
 recentExpenseReport :: Category -> Journal -> String
 recentExpenseReport c
@@ -201,21 +237,65 @@ recentExpenseReport c
     . reverse
     . sortBy (on compare fst)
     . filter (\(_, Spend e) -> (==c) . getExpenseCategory $ e)
-    . filter (isSpent . snd)
+    . filter (isSpend . snd)
 
-isSpent :: Entry -> Bool
-isSpent (Spend _) = True
-isSpent _ = False
+isSpend :: Entry -> Bool
+isSpend (Spend _) = True
+isSpend _ = False
 
 isBudget :: Entry -> Bool
 isBudget (Budget _) = True
 isBudget _ = False
 
+isEarn :: Entry -> Bool
+isEarn (Earn _) = True
+isEarn _ = False
+
+isSave :: Entry -> Bool
+isSave (Save _) = True
+isSave _ = False
+
+isRealize :: Entry -> Bool
+isRealize (Realize _) = True
+isRealize _ = False
+
+budgetCategory :: Category -> Entry -> Bool
+budgetCategory c (Budget be) = getBudgetCategory be == c
+budgetCategory _ _ = False
+
+spendCategory :: Category -> Entry -> Bool
+spendCategory c (Spend e) = getExpenseCategory e == c
+spendCategory _ _ = False
+
+categories :: Journal -> [(Category, Journal)]
+categories
+    = M.toAscList
+    . M.fromListWith (++)
+    . fmap (\e -> (getCategory . snd $ e, [e]))
+
+getCategory :: Entry -> Category
+getCategory (Budget be) = getBudgetCategory be
+getCategory (Spend e) = getExpenseCategory e
+getCategory (Earn e) = getExpenseCategory e
+getCategory (Save e) = getExpenseCategory e
+getCategory (Realize e) = getExpenseCategory e
+getCategory (Undo entry) = getCategory entry
+getCategory (Redo entry) = getCategory entry
+
+mostRecentBudgets :: Journal -> Budget
+mostRecentBudgets
+    = fmap (\(_, be) -> (getBudgetCategory be, be))
+    . fmap (maximumBy (on compare fst)) -- take latest in each group
+    . groupBy (on (==) (getBudgetCategory . snd)) -- group by category
+    . sortBy (on compare (getBudgetCategory . snd))
+    . fmap (\(t, Budget be) -> (t, be)) -- get budget entries
+    . filter (isBudget . snd)
+
 printBudgetReport :: BudgetEntry -> Expenses -> IO String
 printBudgetReport be es = do
     let freq = getBudgetFrequency be
     daysRemaining <- show <$> nearest freq
-    let bs = totalSpent es
+    let bs = sum . fmap getExpenseValue $ es
     let bv = getBudgetValue be
     let bb = bv - bs
     return $ "Of "

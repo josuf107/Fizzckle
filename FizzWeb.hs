@@ -6,15 +6,16 @@
 module Main where
 
 import Fizz
-import Fizz.Core
-import Fizz.Store
+import Fizz.Core as Fizz
+import Fizz.Store as Fizz
+import Fizz.Utils (showDollars)
 
 import Control.Applicative
-import Control.Monad
 import Data.Char (toLower)
 import Data.Function
 import Data.List
 import Data.Maybe
+import qualified Data.Map as M
 import qualified Data.Text as T
 import Data.Time
 import System.Environment (getArgs)
@@ -60,7 +61,7 @@ unwrap :: CategoryPiece -> Category
 unwrap (CategoryPiece c) = c
 
 categoryPath :: Category -> T.Text
-categoryPath = T.pack . fmap toLower . pretty
+categoryPath = T.pack . fmap toLower . printCategory
 
 instance PathPiece CategoryPiece where
     toPathPiece = categoryPath . unwrap
@@ -87,24 +88,23 @@ postFizzR = do
 getBudgetsR :: Handler Html
 getBudgetsR = defaultLayout $ do
     setTitle "Fizckle"
-    allBudgets <- liftIO $ filter ((/=0) . getBudgetValue) <$> fmap snd <$> readBudget
-    let categories = fmap getBudgetCategory allBudgets
-    spentEach <- liftIO . sequence
-        . fmap (\c -> sum . fmap getExpenseValue <$> readCurrentExpenses c)
-        $ categories
-    let totals = zip categories spentEach
+    journal <- liftIO loadJournal
+    let allBudgets = fmap snd . mostRecentBudgets $ journal
+    let activeCategories = fmap getBudgetCategory allBudgets :: [Category]
+    let spentEach = fmap (\c
+            -> totalSpent
+            . filter (spendCategory c . snd)
+            . takeWhile (not . budgetCategory c . snd)
+            . reverse
+            $ journal) $ activeCategories
+    let totals = zip activeCategories spentEach
     let
-        (budgets, (incomes, savings))
-            = (\(b, is) -> (b, partition ((==Income) . getBudgetType) is))
-            . partition ((==Expense) . getBudgetType)
+        (budgets, savings)
+            = partition ((==Expense) . getBudgetType)
             $ allBudgets
     let totalBudget = sum . fmap getMonthlyValue $ (budgets ++ savings)
-    let totalIncome = sum . fmap getMonthlyValue $ incomes
-    totalSaved <- liftIO
-        . sequence
-        . fmap (\c -> sum . fmap getExpenseValue <$> readSavings c)
-        $ categories
-    let savedTotals = zip categories totalSaved
+    let totalIncome = totalEarned journal
+    let savedTotals = fmap (\(c, j) -> (c, totalSaved j)) . Fizz.categories $ journal
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
     addScriptRemote "http://code.jquery.com/jquery-1.10.2.min.js"
@@ -124,24 +124,45 @@ putBudgetR c = do
             <*> (mf >>= maybeReadT)
             <*> (mt >>= maybeReadT)
     case mbe of
-        Just be -> liftIO $ void (writeBudgetEntry be)
+        Just be -> liftIO $ budget be
         Nothing -> return ()
 
 deleteBudgetR :: CategoryPiece -> Handler ()
-deleteBudgetR = liftIO . tickExpenseCategory . unwrap
+deleteBudgetR cp = liftIO $ do
+    journal <- loadJournal
+    let budget = mostRecentBudgets journal
+    case lookup (unwrap cp) budget of
+        (Just be) -> Fizz.budget be
+        Nothing -> return ()
 
 deleteSavingsR :: CategoryPiece -> Handler ()
-deleteSavingsR = liftIO . clearSavings . unwrap
+deleteSavingsR cp = liftIO $ do
+    journal <- loadJournal
+    let savingsToRealize = getSavings journal
+    realize (newExpenseEntry c savingsToRealize ("Realized " ++ printCategory c))
+    where
+        c = unwrap cp
+        getSavings = totalSaved
+            . filter ((==c) . getCategory . snd)
+            . takeWhile
+                ( not
+                . (\e -> isRealize e && getCategory e == c)
+                . snd)
+            . reverse
 
 getExpensesR :: Handler Html
 getExpensesR = defaultLayout $ do
-    cats <- liftIO readCategories
-    expenses <- liftIO $ mapM readAllExpenses cats
-    let catMap = zip cats expenses
-    let rows = toRows catMap
+    journal <- liftIO loadJournal
+    let rows = toRows . groupExpenses $ journal
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "expenses.hamlet")
     where
+        groupExpenses
+            = M.toAscList
+            . M.fromListWith (++)
+            . fmap (\(Spend e) -> (getExpenseCategory e, [e]))
+            . filter isSpend
+            . fmap snd
         toRow :: (Category, [ExpenseEntry]) -> (Category, Double, Int, Double)
         toRow (c, es) =
             ( c
@@ -163,19 +184,20 @@ getExpensesR = defaultLayout $ do
 
 getExpenseCategoryR :: CategoryPiece -> Handler Html
 getExpenseCategoryR cat = defaultLayout $ do
-    expenses <- liftIO . readAllExpenses . unwrap $ cat
+    journal <- liftIO loadJournal
+    let expenses = fmap (\(t, Spend e) -> (t, e)) . filter (\e -> getCategory (snd e) == unwrap cat && isSpend (snd e)) $ journal
     let rows = toRows expenses
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "expense.hamlet")
     where
-        toRow :: ExpenseEntry -> (Double, String, String)
-        toRow e = (getExpenseValue e
-            , getExpenseDescription e
-            , show . localDay . getExpenseTime $ e)
-        toRows :: [ExpenseEntry] -> [(Double, String, String)]
+        toRow :: (Timestamped ExpenseEntry) -> (Double, String, String)
+        toRow e = (getExpenseValue . snd $ e
+            , getExpenseDescription . snd $ e
+            , show . localDay . getTimestamp $ e)
+        toRows :: [Timestamped ExpenseEntry] -> [(Double, String, String)]
         toRows = fmap toRow
             . reverse
-            . sortBy (compare `on` getExpenseTime)
+            . sortBy (compare `on` getTimestamp)
 
 postExpenseCategoryR :: CategoryPiece -> Handler ()
 postExpenseCategoryR _ = undefined

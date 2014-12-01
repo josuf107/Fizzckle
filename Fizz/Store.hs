@@ -9,6 +9,7 @@ module Fizz.Store
     , queryBack
     , queryRange
     , queryUntil
+    , findEntry
     , loadJournal
     )
 where
@@ -64,6 +65,9 @@ queryUntil test
     = takeWhile (not . test . snd)
     . reverse
     <$> loadJournal
+
+findEntry :: (Entry -> Bool) -> IO (Maybe (Timestamped Entry))
+findEntry test = find (test . snd) . reverse <$> loadJournal
 
 loadJournal :: IO Journal
 loadJournal
