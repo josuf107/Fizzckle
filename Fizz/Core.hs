@@ -1,50 +1,25 @@
 module Fizz.Core
-    ( Tag
+    ( Entry(..)
+    , Journal
+    , Timestamped
+        , getTimestamp
     , Category
-    , mkCategory
+        , mkCategory
     , Budget
     , Expenses
-    , Frequency (Weekly, Monthly, Yearly)
-    , BudgetEntry
-    , BudgetType(..)
-    , getBudgetCategory
-    , getBudgetValue
-    , getBudgetFrequency
-    , getBudgetType
-    , newBudgetEntry
     , ExpenseEntry
-    , getExpenseValue
-    , getExpenseCategory
-    , getExpenseTag
-    , getExpenseDescription
-    , getExpenseTime
-    , newExpenseEntry
-    , newPromise
-    , next
-    , Action    ( Error
-                , Fulfill
-                , Future
-                , Promise
-                , BudgetReport
-                , BudgetsReport
-                , RecentExpenseReport
-                , EnterBudget
-                , EnterExpense
-                )
-    , getExpenseYear
-    , getExpenseMonth
-    , getExpenseDom
-    , getExpenseWeek
-    , getExpenseDow
-    , getExpenseDiffTime
-    , printBudget
-    , printLongBudget
-    , budgetTotal
-    , getMonthlyValue
-    , printBudgetReport
-    , pretty
-    , future
-    , showDollars
+        , getExpenseTag
+        , getExpenseCategory
+        , getExpenseValue
+        , getExpenseDescription
+        , newExpenseEntry
+    , BudgetEntry
+        , getBudgetValue
+        , getBudgetCategory
+        , getBudgetFrequency
+        , getBudgetType
+    , Frequency
+    , recentExpenseReport
     )
 where
 
@@ -52,12 +27,13 @@ import Fizz.Utils
 
 import Control.Applicative
 import Data.Char
+import Data.Function
 import Data.List
 import Data.Time
 import Data.Time.Calendar.WeekDate
-import Text.Printf
 
-type Journal = [(LocalTime, Entry)]
+type Timestamped a = (LocalTime, a)
+type Journal = [Timestamped Entry]
 
 data Entry
     = Budget BudgetEntry
@@ -67,7 +43,7 @@ data Entry
     | Realize ExpenseEntry
     | Undo Entry
     | Redo Entry
-    deriving (Show, Eq)
+    deriving (Show, Read, Eq)
 
 type Tag = String
 
@@ -109,52 +85,29 @@ data ExpenseEntry
         , getExpenseCategory :: Category
         , getExpenseValue :: Double
         , getExpenseDescription :: String
-        , getExpenseTime :: LocalTime
         } deriving(Show, Read, Eq)
 
-data WeekDate
-    = WeekDate
-        { getWeekDateYear :: Integer
-        , getWeekDateWeek :: Int
-        , getWeekDateDow :: Int
-        } deriving(Show, Read)
+type Print a = a -> String
 
-data MonthDate
-    = MonthDate
-        { getMonthDateMonth :: Int
-        , getMonthDateDom :: Int
-        } deriving(Show, Read)
+printTimestampedEntry :: Print (Timestamped ExpenseEntry)
+printTimestampedEntry (t, e) = "\t"
+    ++ (show . localDay $ t)
+    ++ ": $"
+    ++ (show
+        . (/100.0)
+        . fromIntegerToDouble
+        . round
+        . (*100.0)
+        . getExpenseValue $ e)
+    ++ " --- "
+    ++ getExpenseDescription e
 
-data Action
-    = Error String
-    | Future Double Double Double Integer
-    | BudgetReport Category
-    | BudgetsReport
-    | Promise ExpenseEntry
-    | Fulfill ExpenseEntry
-    | RecentExpenseReport Category
-    | EnterBudget BudgetEntry
-    | EnterExpense ExpenseEntry deriving(Show)
+printCategory :: Print Category
+printCategory Uncategorized = "UNCATEGORIZED"
+printCategory (Category c) = c
 
-class Pretty a where
-    pretty :: a -> String
-
-instance Pretty ExpenseEntry where
-    pretty e = "\t"
-        ++ (show . localDay . getExpenseTime $ e)
-        ++ ": $"
-        ++ (show
-            . (/100.0)
-            . fromIntegerToDouble
-            . round
-            . (*100.0)
-            . getExpenseValue $ e)
-        ++ " --- "
-        ++ getExpenseDescription e
-
-instance Pretty Category where
-    pretty Uncategorized = "UNCATEGORIZED"
-    pretty (Category c) = c
+getTimestamp :: Timestamped a -> LocalTime
+getTimestamp = fst
 
 mkCategory :: String -> Category
 mkCategory c    | isEmpty c = Uncategorized
@@ -170,8 +123,17 @@ defaultEntry = ExpenseEntry
     , getExpenseCategory = Uncategorized
     , getExpenseValue = 0
     , getExpenseDescription = ""
-    , getExpenseTime = LocalTime (ModifiedJulianDay 1) midnight
     }
+
+newBudgetEntry :: Category -> Double -> Frequency -> BudgetType -> BudgetEntry
+newBudgetEntry c v f t = BudgetEntry v c f t
+
+newExpenseEntry :: Category -> Double -> String -> ExpenseEntry
+newExpenseEntry c v d = defaultEntry
+        { getExpenseCategory = c
+        , getExpenseValue = v
+        , getExpenseDescription = d
+        }
 
 getMonthlyValue :: BudgetEntry -> Double
 getMonthlyValue be =
@@ -183,7 +145,7 @@ getMonthlyValue be =
 printBudget :: Budget -> String
 printBudget budget =
     let
-        body = fmap (pretty . fst) budget
+        body = fmap (show . fst) budget
         total = sum . fmap (getMonthlyValue . snd) $ budget
     in
         "Budgets "
@@ -199,7 +161,7 @@ printLongBudget budget =
         showLine (t, b) =
             "\t"
             ++ value b ++ " (" ++ freq  b ++ ") "
-            ++ pretty t
+            ++ show t
         body = fmap showLine budget
         total = sum . fmap (getMonthlyValue . snd) $ budget
     in
@@ -211,59 +173,6 @@ printLongBudget budget =
 budgetTotal :: Budget -> Double
 budgetTotal = fromIntegerToDouble
     . round . sum . fmap (getBudgetValue . snd)
-
-newBudgetEntry :: Category -> Double -> Frequency -> BudgetType -> BudgetEntry
-newBudgetEntry c v f t = BudgetEntry v c f t
-
-newPromise :: Category -> String -> ExpenseEntry
-newPromise c = tagExpense ".promise" . newExpenseEntry c 0
-
-tagExpense :: Tag -> ExpenseEntry -> ExpenseEntry
-tagExpense t e = e { getExpenseTag = newTags }
-    where
-        newTags :: [Tag]
-        newTags = nub $ t : (getExpenseTag e)
-
-newExpenseEntry :: Category -> Double -> String -> ExpenseEntry
-newExpenseEntry c v d = defaultEntry
-        { getExpenseCategory = c
-        , getExpenseValue = v
-        , getExpenseDescription = d
-        }
-
-getExpenseDom :: ExpenseEntry -> Int
-getExpenseDom = getMonthDateDom . getExpenseMonthDate
-
-getExpenseDow :: ExpenseEntry -> Int
-getExpenseDow = getWeekDateDow . getExpenseWeekDate
-
-getExpenseMonth :: ExpenseEntry -> Int
-getExpenseMonth = getMonthDateMonth . getExpenseMonthDate
-
-getExpenseWeek :: ExpenseEntry -> Int
-getExpenseWeek = getWeekDateWeek . getExpenseWeekDate
-
-getExpenseYear :: ExpenseEntry -> Integer
-getExpenseYear = getWeekDateYear . getExpenseWeekDate
-
-getExpenseMonthDate :: ExpenseEntry -> MonthDate
-getExpenseMonthDate e =
-    let
-        (_, month, dom) = toGregorian . localDay . getExpenseTime $ e
-    in
-        MonthDate month dom
-
-getExpenseWeekDate :: ExpenseEntry -> WeekDate
-getExpenseWeekDate e =
-    let
-        (year, week, dow) = toWeekDate . localDay . getExpenseTime $ e
-    in
-        WeekDate year week dow
-
-getExpenseDiffTime :: ExpenseEntry -> DiffTime
-getExpenseDiffTime = timeOfDayToTime
-    . localTimeOfDay
-    . getExpenseTime
 
 nearest :: Frequency -> IO Int
 nearest f = do
@@ -284,6 +193,24 @@ nearest f = do
 totalSpent :: Expenses -> Double
 totalSpent = sum . fmap getExpenseValue
 
+recentExpenseReport :: Category -> Journal -> String
+recentExpenseReport c
+    = unlines
+    . fmap (\(time, Spend e) -> printTimestampedEntry (time, e))
+    . take 10
+    . reverse
+    . sortBy (on compare fst)
+    . filter (\(_, Spend e) -> (==c) . getExpenseCategory $ e)
+    . filter (isSpent . snd)
+
+isSpent :: Entry -> Bool
+isSpent (Spend _) = True
+isSpent _ = False
+
+isBudget :: Entry -> Bool
+isBudget (Budget _) = True
+isBudget _ = False
+
 printBudgetReport :: BudgetEntry -> Expenses -> IO String
 printBudgetReport be es = do
     let freq = getBudgetFrequency be
@@ -298,16 +225,3 @@ printBudgetReport be es = do
         ++", leaving "
         ++ showDollars bb
         ++ " for the next " ++ daysRemaining ++ " days."
-
-isEmpty :: String -> Bool
-isEmpty = (=="") . filter (not . flip elem whiteChars)
-
-showDollars :: Double -> String
-showDollars d
-    | d >= 0 = printf "$%.2f" d
-    | otherwise = printf "-$%.2f" (abs d)
-
-future :: Double -> Double -> Double -> Integer -> Double
-future principle _ _ 0 = principle
-future principle increment rate periods =
-    future ((principle + increment) * rate) increment rate (periods - 1)

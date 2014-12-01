@@ -8,6 +8,16 @@ import Control.Applicative
 import Control.Monad (void)
 import qualified Text.ParserCombinators.Parsec as PC
 
+data Action
+    = Error String
+    | Future Double Double Double Integer
+    | BudgetReport Category
+    | BudgetsReport
+    | Fulfill ExpenseEntry
+    | RecentExpenseReport Category
+    | EnterBudget BudgetEntry
+    | EnterExpense ExpenseEntry deriving(Show)
+
 parseFizz :: String -> Action
 parseFizz = either (Error . show) id
     . PC.parse fizzParser "text"
@@ -15,19 +25,10 @@ parseFizz = either (Error . show) id
 doFizz :: Action -> IO String
 doFizz (Error s) = return $ "Error: " ++ s
 doFizz (EnterExpense e) = do
-    void $ writeExpenseEntry e
+    spend e
     doFizz . BudgetReport . getExpenseCategory $ e
-doFizz (Promise e) = do
-    void $ writePromise e
-    return $ "Promised for " ++ (show . getExpenseCategory $ e)
-doFizz (Fulfill e) = do
-    promises <- readPromises (getExpenseCategory $ e)
-    case promises of
-        (p:_) -> do
-            fulfillPromise (p { getExpenseValue = getExpenseValue e} )
-            doFizz . BudgetReport . getExpenseCategory $ e
-        _ -> return "No promise for that category"
-doFizz (RecentExpenseReport c) = recentExpenseReport c
+doFizz (RecentExpenseReport c) = do
+    recentExpenseReport c <$> queryBack 30
 doFizz BudgetsReport = do
     b <- readBudget
     return $ printBudget b
@@ -47,7 +48,6 @@ doFizz (Future p i r ps) = return . show $ future p i r ps
 fizzParser :: PC.GenParser Char st Action
 fizzParser = PC.choice [emptyParser
     , actionParser
-    , promiseParser
     , fulfillParser
     , entryParser
     , queryParser]
@@ -79,26 +79,6 @@ queryParser = do
     whitespace
     c <- nonwhitespace
     return $ BudgetReport (mkCategory c)
-
-promiseParser :: PC.GenParser Char st Action
-promiseParser = do
-    whitespace
-    void $ PC.char '?'
-    whitespace
-    c <- mkCategory <$> nonwhitespace
-    whitespace
-    d <- PC.many1 PC.anyChar
-    return . Promise $ newPromise c d
-
-fulfillParser :: PC.GenParser Char st Action
-fulfillParser = do
-    whitespace
-    void $ PC.char '*'
-    whitespace
-    c <- mkCategory <$> nonwhitespace
-    whitespace
-    v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
-    return . Fulfill $ newExpenseEntry c v ""
 
 actionParser :: PC.GenParser Char st Action
 actionParser = do
