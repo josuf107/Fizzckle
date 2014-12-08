@@ -43,3 +43,4 @@ executable Fizzckle
                  , filepath
                  , parsec
                  , transformers                  >= 0.3
+                 , cassava                       >= 0.3.0.0         && < 0.3.0.1
