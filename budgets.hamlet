@@ -1,38 +1,5 @@
 <h1>Budgets
 <span>
-    New Income:
-    <form id=newIncome>
-        <input type=text name=cat id=cat value="Category">
-        <select name=freq id=freq value=freq>
-            <option value=Weekly>Weekly
-            <option value=Monthly>Monthly
-            <option value=Yearly>Yearly
-        <br>
-        <input type=text name=val id=val value=value>
-        <input type=hidden name=type id=type value=Income>
-        <input type=submit id=new value=create>
-<table>
-    <tr class=header>
-        <td>Category
-        <td>Earned
-        <td>Expected
-        <td>Frequency
-        <td colspan=2>
-    $forall income <- incomes
-        <tr>
-            <td>
-                <a class=stress href=/expenses/#{categoryPath $ getBudgetCategory income}>
-                    #{categoryPath $ getBudgetCategory income}
-            $maybe spent <- lookup (getBudgetCategory income) totals
-                <td>#{showDollars spent}
-            $nothing
-                <td>ERROR
-            <td>#{showDollars $ getBudgetValue income}
-            <td class="freq" onclick="set('#{categoryPath $ getBudgetCategory income}', '#{getBudgetValue income}', '#{show $ next $ getBudgetFrequency income}', 'Income')">#{show $ getBudgetFrequency income}
-            <td class="button" onclick="set('#{categoryPath $ getBudgetCategory income}', '#{(getBudgetValue income) - 5}', '#{show $ getBudgetFrequency income}', 'Income')">+
-            <td class="button" onclick="set('#{categoryPath $ getBudgetCategory income}', '#{(getBudgetValue income) + 5}', '#{show $ getBudgetFrequency income}', 'Income')">-
-<p>
-<span>
     New Budget:
     <form id=newBudget>
         <input type=text name=cat id=cat value="Category">
@@ -69,8 +36,8 @@
             <td class="button" onclick="tick('#{categoryPath $ getBudgetCategory budget}')">tick
 <p>
     Total <span class=stress>#{showDollars totalBudget}</span> of <span
-    class=stress>#{showDollars totalIncome}</span> leaving <span
-    class=stress>#{showDollars $ totalIncome - totalBudget}</span>
+    class=stress>#{showDollars disposable}</span> leaving <span
+    class=stress>#{showDollars $ disposable - totalBudget}</span>
 <h1>Savings
 <table>
     <tr class=header>

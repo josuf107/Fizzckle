@@ -8,6 +8,13 @@ import Control.Applicative
 import Control.Monad (void)
 import qualified Text.ParserCombinators.Parsec as PC
 
+data Action
+    = Error String
+    | BudgetReport Category
+    | RecentExpenseReport Category
+    | EnterBudget BudgetEntry
+    | EnterExpense ExpenseEntry deriving(Show)
+
 parseFizz :: String -> Action
 parseFizz = either (Error . show) id
     . PC.parse fizzParser "text"
@@ -15,40 +22,29 @@ parseFizz = either (Error . show) id
 doFizz :: Action -> IO String
 doFizz (Error s) = return $ "Error: " ++ s
 doFizz (EnterExpense e) = do
-    void $ writeExpenseEntry e
+    spend e
     doFizz . BudgetReport . getExpenseCategory $ e
-doFizz (Promise e) = do
-    void $ writePromise e
-    return $ "Promised for " ++ (show . getExpenseCategory $ e)
-doFizz (Fulfill e) = do
-    promises <- readPromises (getExpenseCategory $ e)
-    case promises of
-        (p:_) -> do
-            fulfillPromise (p { getExpenseValue = getExpenseValue e} )
-            doFizz . BudgetReport . getExpenseCategory $ e
-        _ -> return "No promise for that category"
-doFizz (RecentExpenseReport c) = recentExpenseReport c
-doFizz BudgetsReport = do
-    b <- readBudget
-    return $ printBudget b
+doFizz (RecentExpenseReport c) = do
+    recentExpenseReport c <$> queryBack 30
 doFizz (EnterBudget b) = do
-    writeBudgetEntry b
+    budget b
     return "New budget created"
 doFizz (BudgetReport t) = do
-    mbe <- getBudgetEntry t
+    mbe <- findEntry (budgetCategory t)
+    journal <- queryUntil (budgetCategory t)
     case mbe of
-        Nothing -> doFizz . Error $ 
-            "\"" ++ pretty t ++ "\" is not a budget item"
-        Just be -> do
-            es <- readCurrentExpenses (getBudgetCategory be)
-            printBudgetReport be es
-doFizz (Future p i r ps) = return . show $ future p i r ps
+        Just (_, Budget be)
+            -> printBudgetReport be
+            . fmap (\(Spend e) -> e)
+            . filter (spendCategory t)
+            . fmap snd
+            $ journal
+        _ -> doFizz . Error $ 
+            "\"" ++ printCategory t ++ "\" is not a budget item"
 
 fizzParser :: PC.GenParser Char st Action
 fizzParser = PC.choice [emptyParser
     , actionParser
-    , promiseParser
-    , fulfillParser
     , entryParser
     , queryParser]
 
@@ -80,33 +76,12 @@ queryParser = do
     c <- nonwhitespace
     return $ BudgetReport (mkCategory c)
 
-promiseParser :: PC.GenParser Char st Action
-promiseParser = do
-    whitespace
-    void $ PC.char '?'
-    whitespace
-    c <- mkCategory <$> nonwhitespace
-    whitespace
-    d <- PC.many1 PC.anyChar
-    return . Promise $ newPromise c d
-
-fulfillParser :: PC.GenParser Char st Action
-fulfillParser = do
-    whitespace
-    void $ PC.char '*'
-    whitespace
-    c <- mkCategory <$> nonwhitespace
-    whitespace
-    v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
-    return . Fulfill $ newExpenseEntry c v ""
-
 actionParser :: PC.GenParser Char st Action
 actionParser = do
     whitespace
     void $ PC.char '@'
     PC.choice [PC.try recentParser
         , PC.try budgetEntryParser
-        , PC.try budgetsParser
         , return (Error "Unrecognized @command")]
 
 recentParser :: PC.GenParser Char st Action
@@ -115,11 +90,6 @@ recentParser = do
     whitespace
     c <- nonwhitespace
     return $ RecentExpenseReport (mkCategory c)
-
-budgetsParser :: PC.GenParser Char st Action
-budgetsParser = do
-    void $ PC.string "budgets"
-    return BudgetsReport
 
 budgetEntryParser :: PC.GenParser Char st Action
 budgetEntryParser = do
