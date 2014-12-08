@@ -8,7 +8,7 @@ module Main where
 import Fizz
 import Fizz.Core as Fizz
 import Fizz.Store as Fizz
-import Fizz.Utils (showDollars)
+import Fizz.Utils (showDollars, getTime)
 
 import Control.Applicative
 import Data.Char (toLower)
@@ -103,9 +103,9 @@ getBudgetsR = defaultLayout $ do
             = partition ((==Expense) . getBudgetType)
             $ allBudgets
     let totalBudget = sum . fmap getMonthlyValue $ (budgets ++ savings)
-    let totalIncome = totalEarned journal
-    let totalUsed = totalSpent journal
-    let disposable = totalDisposable journal
+    time <- liftIO getTime
+    let startOfMonth = LocalTime ((\(y, m, _) -> fromGregorian y m 1) . toGregorian . localDay $ time) (TimeOfDay 0 0 0)
+    let disposable = totalDisposable . filter ((<startOfMonth) . fst) $ journal
     let savedTotals = fmap (\(c, j) -> (c, totalSaved j)) . Fizz.categories $ journal
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
