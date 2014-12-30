@@ -12,6 +12,7 @@ data Action
     = Error String
     | BudgetReport Category
     | RecentExpenseReport Category
+    | EnterSaving ExpenseEntry
     | EnterBudget BudgetEntry
     | EnterExpense ExpenseEntry deriving(Show)
 
@@ -21,6 +22,9 @@ parseFizz = either (Error . show) id
 
 doFizz :: Action -> IO String
 doFizz (Error s) = return $ "Error: " ++ s
+doFizz (EnterSaving e) = do
+    save e
+    doFizz . BudgetReport . getExpenseCategory $ e
 doFizz (EnterExpense e) = do
     spend e
     doFizz . BudgetReport . getExpenseCategory $ e
@@ -82,6 +86,7 @@ actionParser = do
     void $ PC.char '@'
     PC.choice [PC.try recentParser
         , PC.try budgetEntryParser
+        , PC.try saveEntryParser
         , return (Error "Unrecognized @command")]
 
 recentParser :: PC.GenParser Char st Action
@@ -101,6 +106,17 @@ budgetEntryParser = do
     whitespace
     f <- frequencyParser
     return . EnterBudget $ newBudgetEntry c v f Expense
+
+saveEntryParser :: PC.GenParser Char st Action
+saveEntryParser = do
+    void $ PC.string "save"
+    whitespace
+    v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
+    whitespace
+    c <- mkCategory <$> nonwhitespace
+    whitespace
+    d <- PC.many1 PC.anyChar
+    return . EnterSaving $ newExpenseEntry c v d
 
 frequencyParser :: PC.GenParser Char st Frequency
 frequencyParser =
