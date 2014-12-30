@@ -13,6 +13,7 @@ data Action
     | BudgetReport Category
     | RecentExpenseReport Category
     | EnterSaving ExpenseEntry
+    | EnterEarning ExpenseEntry
     | EnterBudget BudgetEntry
     | EnterExpense ExpenseEntry deriving(Show)
 
@@ -27,6 +28,9 @@ doFizz (EnterSaving e) = do
     doFizz . BudgetReport . getExpenseCategory $ e
 doFizz (EnterExpense e) = do
     spend e
+    doFizz . BudgetReport . getExpenseCategory $ e
+doFizz (EnterEarning e) = do
+    earn e
     doFizz . BudgetReport . getExpenseCategory $ e
 doFizz (RecentExpenseReport c) = do
     recentExpenseReport c <$> queryBack 30
@@ -66,13 +70,8 @@ emptyParser = do
 
 entryParser :: PC.GenParser Char st Action
 entryParser = do
-    whitespace
-    v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
-    whitespace
-    c <- mkCategory <$> nonwhitespace
-    whitespace
-    d <- PC.many1 PC.anyChar
-    return . EnterExpense $ newExpenseEntry c v d
+    e <- expenseEntryParser
+    return . EnterExpense $ e
 
 queryParser :: PC.GenParser Char st Action
 queryParser = do
@@ -87,6 +86,7 @@ actionParser = do
     PC.choice [PC.try recentParser
         , PC.try budgetEntryParser
         , PC.try saveEntryParser
+        , PC.try earnEntryParser
         , return (Error "Unrecognized @command")]
 
 recentParser :: PC.GenParser Char st Action
@@ -110,13 +110,24 @@ budgetEntryParser = do
 saveEntryParser :: PC.GenParser Char st Action
 saveEntryParser = do
     void $ PC.string "save"
+    e <- expenseEntryParser
+    return . EnterSaving $ e
+
+earnEntryParser :: PC.GenParser Char st Action
+earnEntryParser = do
+    void $ PC.string "earn"
+    e <- expenseEntryParser
+    return . EnterEarning $ e
+
+expenseEntryParser :: PC.GenParser Char st ExpenseEntry
+expenseEntryParser = do
     whitespace
     v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
     whitespace
     c <- mkCategory <$> nonwhitespace
     whitespace
     d <- PC.many1 PC.anyChar
-    return . EnterSaving $ newExpenseEntry c v d
+    return $ newExpenseEntry c v d
 
 frequencyParser :: PC.GenParser Char st Frequency
 frequencyParser =
