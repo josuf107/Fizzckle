@@ -9,7 +9,7 @@ module Main where
 import Fizz
 import Fizz.Core as Fizz
 import qualified Fizz.Store as Fizz
-import Fizz.Utils (showDollars, getTime)
+import Fizz.Utils (showDollars, getTime, between)
 
 import Data.Char (toLower)
 import Data.Function
@@ -49,6 +49,7 @@ mkYesod "Fizz" [parseRoutes|
 /savings/#CategoryPiece SavingsR DELETE
 /expenses ExpensesR GET
 /expenses/#CategoryPiece ExpenseCategoryR GET POST
+/dash DashR GET
 /dash/fizz FizzR POST
 |]
 
@@ -209,6 +210,47 @@ getExpenseCategoryR cat = defaultLayout $ do
 
 postExpenseCategoryR :: CategoryPiece -> Handler ()
 postExpenseCategoryR _ = undefined
+
+getDashR :: Handler Html
+getDashR = defaultLayout $ do
+    currentTime <- liftIO getTime
+    journal <- liftIO Fizz.loadJournal
+    let rows = getDashRows currentTime journal
+    toWidget $(cassiusFile "budgets.cassius")
+    $(whamletFile "dash.hamlet")
+
+getDashRows :: LocalTime -> Journal -> [(String, String, String, Double, Double, Double, Double)]
+getDashRows currentTime journal = fmap toRow expenses
+    where
+        (monthStart, monthEnd) = (toMonthStart currentTime, toMonthEnd currentTime)
+        thisMonth = filter (between monthStart monthEnd . getTimestamp) journal
+        lastMonth = filter ((<monthStart) . getTimestamp) journal
+        lastMonthBalances = M.map (\j -> totalBudgeted j - totalSpent j) . M.fromList . categories $ lastMonth
+        budgets = M.fromList . mostRecentBudgets $ journal
+        expenses = filter (isSpend . snd) thisMonth
+        toRow (ts, Spend e) = (show . localDay $ ts,
+            printCategory . getExpenseCategory $ e,
+            getExpenseDescription e,
+            getExpenseValue e,
+            maybe 0 getBudgetValue . M.lookup (getExpenseCategory e) $ budgets,
+            (maybe 0 getBudgetValue . M.lookup (getExpenseCategory e) $ budgets) - getExpenseValue e,
+            maybe 0 id . M.lookup (getExpenseCategory e) $ lastMonthBalances)
+        toRow _ = error "Non-Spend Entry in toRow"
+
+toMonthStart :: LocalTime -> LocalTime
+toMonthStart = atMidnight
+    . (\(y, m, _) -> fromGregorian y m 1)
+    . toGregorian
+    . localDay
+
+toMonthEnd :: LocalTime -> LocalTime
+toMonthEnd = atMidnight
+    . (\(y, m, _) -> fromGregorian y (m + 1) 1)
+    . toGregorian
+    . localDay
+
+atMidnight :: Day -> LocalTime
+atMidnight = flip LocalTime (TimeOfDay 0 0 0)
 
 maybeReadT :: Read a => T.Text -> Maybe a
 maybeReadT s =

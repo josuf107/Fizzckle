@@ -1,0 +1,20 @@
+<h1>This Month
+<table>
+    <tr class=header>
+        <td>Date
+        <td>Category
+        <td>Description
+        <td>Spent
+        <td>Budgeted
+        <td>Remainder
+        <td>Last Month Balance
+    $forall (date, cat, desc, spent, budgeted, remainder, balance) <- rows
+        <tr>
+            <td>#{date}
+            <td>#{cat}
+            <td>#{desc}
+            <td>#{showDollars spent}
+            <td>#{showDollars budgeted}
+            <td>#{showDollars remainder}
+            <td>#{showDollars balance}
+
