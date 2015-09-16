@@ -17,14 +17,9 @@ where
 import Fizz.Core
 import Fizz.Utils
 
-import Control.Applicative
-import Control.Monad
 import Data.List
 import Data.Maybe
 import Data.Time
-import System.Directory
-import System.FilePath
-import System.IO
 
 timestamp :: Entry -> IO (Timestamped Entry)
 timestamp e = getTime >>= (\t -> return (t, e))

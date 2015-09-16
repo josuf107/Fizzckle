@@ -47,7 +47,6 @@ where
 
 import Fizz.Utils
 
-import Control.Applicative
 import Data.Char
 import Data.Function
 import Data.List
@@ -164,38 +163,6 @@ getMonthlyValue be =
         Weekly -> 4.5 * getBudgetValue be
         Monthly -> getBudgetValue be
         Yearly -> getBudgetValue be / 12
-
-printBudget :: Budget -> String
-printBudget budget =
-    let
-        body = fmap (show . fst) budget
-        total = sum . fmap (getMonthlyValue . snd) $ budget
-    in
-        "Budgets "
-        ++ intercalate ", " body
-        ++ " total "
-        ++ showDollars total
-
-printLongBudget :: Budget -> String
-printLongBudget budget =
-    let
-        value = showDollars . getBudgetValue
-        freq = show . getBudgetFrequency
-        showLine (t, b) =
-            "\t"
-            ++ value b ++ " (" ++ freq  b ++ ") "
-            ++ show t
-        body = fmap showLine budget
-        total = sum . fmap (getMonthlyValue . snd) $ budget
-    in
-        "Budget report:\n"
-        ++ intercalate "\n" body
-        ++ "\nTotal: "
-        ++ showDollars total
-
-budgetTotal :: Budget -> Double
-budgetTotal = fromIntegerToDouble
-    . round . sum . fmap (getBudgetValue . snd)
 
 nearest :: Frequency -> IO Int
 nearest f = do

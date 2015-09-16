@@ -2,15 +2,15 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Main where
 
 import Fizz
 import Fizz.Core as Fizz
-import Fizz.Store as Fizz
+import qualified Fizz.Store as Fizz
 import Fizz.Utils (showDollars, getTime)
 
-import Control.Applicative
 import Data.Char (toLower)
 import Data.Function
 import Data.List
@@ -88,7 +88,7 @@ postFizzR = do
 getBudgetsR :: Handler Html
 getBudgetsR = defaultLayout $ do
     setTitle "Fizckle"
-    journal <- liftIO loadJournal
+    journal <- liftIO Fizz.loadJournal
     let allBudgets = fmap snd . mostRecentBudgets $ journal
     let activeCategories = fmap getBudgetCategory allBudgets :: [Category]
     let spentEach = fmap (\c
@@ -126,12 +126,12 @@ putBudgetR c = do
             <*> (mf >>= maybeReadT)
             <*> (mt >>= maybeReadT)
     case mbe of
-        Just be -> liftIO $ budget be
+        Just be -> liftIO $ Fizz.budget be
         Nothing -> return ()
 
 deleteBudgetR :: CategoryPiece -> Handler ()
 deleteBudgetR cp = liftIO $ do
-    journal <- loadJournal
+    journal <- Fizz.loadJournal
     let budget = mostRecentBudgets journal
     case lookup (unwrap cp) budget of
         (Just be) -> Fizz.budget be
@@ -139,9 +139,9 @@ deleteBudgetR cp = liftIO $ do
 
 deleteSavingsR :: CategoryPiece -> Handler ()
 deleteSavingsR cp = liftIO $ do
-    journal <- loadJournal
+    journal <- Fizz.loadJournal
     let savingsToRealize = getSavings journal
-    realize (newExpenseEntry c savingsToRealize ("Realized " ++ printCategory c))
+    Fizz.realize (newExpenseEntry c savingsToRealize ("Realized " ++ printCategory c))
     where
         c = unwrap cp
         getSavings = totalSaved
@@ -154,7 +154,7 @@ deleteSavingsR cp = liftIO $ do
 
 getExpensesR :: Handler Html
 getExpensesR = defaultLayout $ do
-    journal <- liftIO loadJournal
+    journal <- liftIO Fizz.loadJournal
     let rows = toRows . groupExpenses $ journal
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "expenses.hamlet")
@@ -192,15 +192,12 @@ extractEntry _ = Nothing
 
 getExpenseCategoryR :: CategoryPiece -> Handler Html
 getExpenseCategoryR cat = defaultLayout $ do
-    journal <- liftIO loadJournal
+    journal <- liftIO Fizz.loadJournal
     let expenses = catMaybes . maybe [] (fmap (\(t, e) -> maybe Nothing (Just . (,) t) (extractEntry e))) . lookup (unwrap cat) . categories $ journal
     let rows = toRows expenses
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "expense.hamlet")
     where
-        maybeSnd :: (a, Maybe b) -> Maybe (a, b)
-        maybeSnd (a, Just b) = Just (a, b)
-        maybeSnd (a, Nothing) = Nothing
         toRow :: (Timestamped ExpenseEntry) -> (Double, String, String)
         toRow e = (getExpenseValue . snd $ e
             , getExpenseDescription . snd $ e
