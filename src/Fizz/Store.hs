@@ -16,9 +16,10 @@ where
 
 import Fizz.Core
 import Fizz.Utils
+import Fizz.Log
 
+import Data.Either
 import Data.List
-import Data.Maybe
 import Data.Time
 
 timestamp :: Entry -> IO (Timestamped Entry)
@@ -65,11 +66,16 @@ findEntry :: (Entry -> Bool) -> IO (Maybe (Timestamped Entry))
 findEntry test = find (test . snd) . reverse <$> loadJournal
 
 loadJournal :: IO Journal
-loadJournal
-    = catMaybes
-    . fmap maybeRead
-    . lines
-    <$> strictRead journal
+loadJournal = do
+    (badEntries, goodEntries) <- partitionEithers
+        . fmap tryRead
+        . lines
+        <$> strictRead journal
+    mapM_ fizzLog badEntries
+    return goodEntries
+
+tryRead :: Read a => String -> Either String a
+tryRead s = maybe (Left $ "Couldn't parse: " ++ s) Right (maybeRead s)
 
 journal :: FilePath
 journal = "data/journal"
