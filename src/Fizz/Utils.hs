@@ -46,7 +46,7 @@ ifxy True x _ = x
 ifxy _ _ y = y
 
 between :: Ord a => a -> a -> a -> Bool
-between begin end x = x > begin && x < end
+between begin end x = x >= begin && x =< end
 
 getDom :: LocalTime -> Int
 getDom = getMonthDateDom . getMonthDate
