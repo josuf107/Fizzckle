@@ -38,3 +38,4 @@ executable Fizzckle
                  , parsec
                  , transformers
                  , cassava
+                 , vector

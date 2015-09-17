@@ -22,7 +22,7 @@ import Data.Maybe
 import Data.Time
 
 timestamp :: Entry -> IO (Timestamped Entry)
-timestamp e = getTime >>= (\t -> return (t, e))
+timestamp e = getCurrentTime >>= (\t -> return (utctDay t, e))
 
 budget :: BudgetEntry -> IO ()
 budget = record . Budget
@@ -47,10 +47,10 @@ record e = timestamp e >>= strictAppend journal . (++"\n") . show
 
 queryBack :: Integer -> IO Journal
 queryBack lookback = do
-    now@(LocalTime day time) <- getTime
-    queryRange (LocalTime (addDays (negate lookback) day) time) now
+    now <- getTime
+    queryRange (addDays (negate lookback) (localDay now)) (localDay now)
 
-queryRange :: LocalTime -> LocalTime -> IO Journal
+queryRange :: Day -> Day -> IO Journal
 queryRange start end
     = filter (between start end . getTimestamp)
     <$> loadJournal

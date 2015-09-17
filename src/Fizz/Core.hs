@@ -55,7 +55,7 @@ import qualified Data.Map as M
 import Data.Time
 import Data.Time.Calendar.WeekDate
 
-type Timestamped a = (LocalTime, a)
+type Timestamped a = (Day, a)
 type Journal = [Timestamped Entry]
 
 data Entry
@@ -114,7 +114,7 @@ type Print a = a -> String
 
 printTimestampedEntry :: Print (Timestamped ExpenseEntry)
 printTimestampedEntry (t, e) = "\t"
-    ++ (show . localDay $ t)
+    ++ (show t)
     ++ ": $"
     ++ (show
         . (/100.0)
@@ -129,7 +129,7 @@ printCategory :: Print Category
 printCategory Uncategorized = "UNCATEGORIZED"
 printCategory (Category c) = c
 
-getTimestamp :: Timestamped a -> LocalTime
+getTimestamp :: Timestamped a -> Day
 getTimestamp = fst
 
 mkCategory :: String -> Category

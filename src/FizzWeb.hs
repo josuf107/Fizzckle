@@ -9,7 +9,7 @@ module Main where
 import Fizz
 import Fizz.Core as Fizz
 import qualified Fizz.Store as Fizz
-import Fizz.Utils (showDollars, getTime, between)
+import Fizz.Utils (showDollars, between, getTime)
 
 import Data.Char (toLower)
 import Data.Function
@@ -104,8 +104,8 @@ getBudgetsR = defaultLayout $ do
             = partition ((==Expense) . getBudgetType)
             $ allBudgets
     let totalBudget = sum . fmap getMonthlyValue $ (budgets ++ savings)
-    time <- liftIO getTime
-    let startOfMonth = LocalTime ((\(y, m, _) -> fromGregorian y m 1) . toGregorian . localDay $ time) (TimeOfDay 0 0 0)
+    now <- liftIO getTime
+    let startOfMonth = (\(y, m, _) -> fromGregorian y m 1) . toGregorian . localDay $ now
     let disposable = totalDisposable . filter ((<startOfMonth) . fst) $ journal
     let savedTotals = fmap (\(c, j) -> (c, totalSaved j)) . Fizz.categories $ journal
     $(whamletFile "budgets.hamlet")
@@ -202,7 +202,7 @@ getExpenseCategoryR cat = defaultLayout $ do
         toRow :: (Timestamped ExpenseEntry) -> (Double, String, String)
         toRow e = (getExpenseValue . snd $ e
             , getExpenseDescription . snd $ e
-            , show . localDay . getTimestamp $ e)
+            , show . getTimestamp $ e)
         toRows :: [Timestamped ExpenseEntry] -> [(Double, String, String)]
         toRows = fmap toRow
             . reverse
@@ -213,22 +213,22 @@ postExpenseCategoryR _ = undefined
 
 getDashR :: Handler Html
 getDashR = defaultLayout $ do
-    currentTime <- liftIO getTime
+    now <- liftIO getTime
     journal <- liftIO Fizz.loadJournal
-    let rows = getDashRows currentTime journal
+    let rows = getDashRows (localDay now) journal
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "dash.hamlet")
 
-getDashRows :: LocalTime -> Journal -> [(String, String, String, Double, Double, Double, Double)]
-getDashRows currentTime journal = fmap toRow expenses
+getDashRows :: Day -> Journal -> [(String, String, String, Double, Double, Double, Double)]
+getDashRows today journal = fmap toRow expenses
     where
-        (monthStart, monthEnd) = (toMonthStart currentTime, toMonthEnd currentTime)
+        (monthStart, monthEnd) = (toMonthStart today, toMonthEnd today)
         thisMonth = filter (between monthStart monthEnd . getTimestamp) journal
         lastMonth = filter ((<monthStart) . getTimestamp) journal
         lastMonthBalances = M.map (\j -> totalBudgeted j - totalSpent j) . M.fromList . categories $ lastMonth
         budgets = M.fromList . mostRecentBudgets $ journal
         expenses = filter (isSpend . snd) thisMonth
-        toRow (ts, Spend e) = (show . localDay $ ts,
+        toRow (day, Spend e) = (show day,
             printCategory . getExpenseCategory $ e,
             getExpenseDescription e,
             getExpenseValue e,
@@ -237,17 +237,13 @@ getDashRows currentTime journal = fmap toRow expenses
             maybe 0 id . M.lookup (getExpenseCategory e) $ lastMonthBalances)
         toRow _ = error "Non-Spend Entry in toRow"
 
-toMonthStart :: LocalTime -> LocalTime
-toMonthStart = atMidnight
-    . (\(y, m, _) -> fromGregorian y m 1)
+toMonthStart :: Day -> Day
+toMonthStart = (\(y, m, _) -> fromGregorian y m 1)
     . toGregorian
-    . localDay
 
-toMonthEnd :: LocalTime -> LocalTime
-toMonthEnd = atMidnight
-    . (\(y, m, _) -> fromGregorian y (m + 1) 1)
+toMonthEnd :: Day -> Day
+toMonthEnd = (\(y, m, _) -> fromGregorian y (m + 1) 1)
     . toGregorian
-    . localDay
 
 atMidnight :: Day -> LocalTime
 atMidnight = flip LocalTime (TimeOfDay 0 0 0)

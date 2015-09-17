@@ -5,7 +5,6 @@ import qualified Data.Vector as Vector
 import qualified Data.Set as Set
 import Data.Maybe
 import Fizz.Core
-import Fizz.Store
 
 type Text = Text.Text
 type ByteString = BS.ByteString
@@ -22,10 +21,10 @@ data BankEntry
 
 findMissing :: Journal -> [BankEntry] -> [BankEntry]
 findMissing j bes
-    = filter (notIn j)
+    = filter notIn
     $ bes
     where
-        notIn j be =
+        notIn be =
             case bankEntryType be of
                 Deposit -> not $ Set.member (bankEntryValue be) deposits
                 Withdrawal ->  not $ Set.member (bankEntryValue be) withdrawals
