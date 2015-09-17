@@ -88,7 +88,7 @@ postFizzR = do
 
 getBudgetsR :: Handler Html
 getBudgetsR = defaultLayout $ do
-    setTitle "Fizckle"
+    setTitle "Fizzckle"
     journal <- liftIO Fizz.loadJournal
     let allBudgets = fmap snd . mostRecentBudgets $ journal
     let activeCategories = fmap getBudgetCategory allBudgets :: [Category]
