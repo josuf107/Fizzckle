@@ -245,9 +245,6 @@ toMonthEnd :: Day -> Day
 toMonthEnd = (\(y, m, _) -> fromGregorian y (m + 1) 1)
     . toGregorian
 
-atMidnight :: Day -> LocalTime
-atMidnight = flip LocalTime (TimeOfDay 0 0 0)
-
 maybeReadT :: Read a => T.Text -> Maybe a
 maybeReadT s =
     case reads . T.unpack $ s of
