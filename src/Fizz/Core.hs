@@ -3,6 +3,10 @@ module Fizz.Core
     , Journal
     , Timestamped
         , getTimestamp
+    , MaybeTimestamped
+    , noTimestamp
+    , timestamp
+    , maybeTimestamp
     , Category
         , mkCategory
     , Budget
@@ -56,6 +60,7 @@ import Data.Time
 import Data.Time.Calendar.WeekDate
 
 type Timestamped a = (Day, a)
+type MaybeTimestamped a = (Maybe Day, a)
 type Journal = [Timestamped Entry]
 
 data Entry
@@ -131,6 +136,15 @@ printCategory (Category c) = c
 
 getTimestamp :: Timestamped a -> Day
 getTimestamp = fst
+
+noTimestamp :: a -> MaybeTimestamped a
+noTimestamp a = (Nothing, a)
+
+timestamp :: Day -> a -> MaybeTimestamped a
+timestamp d a = (Just d, a)
+
+maybeTimestamp :: Maybe Day -> a -> MaybeTimestamped a
+maybeTimestamp = (,)
 
 mkCategory :: String -> Category
 mkCategory c    | isEmpty c = Uncategorized

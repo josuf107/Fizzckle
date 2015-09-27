@@ -127,7 +127,7 @@ putBudgetR c = do
             <*> (mf >>= maybeReadT)
             <*> (mt >>= maybeReadT)
     case mbe of
-        Just be -> liftIO $ Fizz.budget be
+        Just be -> liftIO $ Fizz.budget (noTimestamp be)
         Nothing -> return ()
 
 deleteBudgetR :: CategoryPiece -> Handler ()
@@ -135,14 +135,14 @@ deleteBudgetR cp = liftIO $ do
     journal <- Fizz.loadJournal
     let budget = mostRecentBudgets journal
     case lookup (unwrap cp) budget of
-        (Just be) -> Fizz.budget be
+        (Just be) -> Fizz.budget (noTimestamp be)
         Nothing -> return ()
 
 deleteSavingsR :: CategoryPiece -> Handler ()
 deleteSavingsR cp = liftIO $ do
     journal <- Fizz.loadJournal
     let savingsToRealize = getSavings journal
-    Fizz.realize (newExpenseEntry c savingsToRealize ("Realized " ++ printCategory c))
+    (Fizz.realize . noTimestamp) (newExpenseEntry c savingsToRealize ("Realized " ++ printCategory c))
     where
         c = unwrap cp
         getSavings = totalSaved

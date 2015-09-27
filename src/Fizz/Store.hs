@@ -22,29 +22,33 @@ import Data.Either
 import Data.List
 import Data.Time
 
-timestamp :: Entry -> IO (Timestamped Entry)
-timestamp e = getCurrentTime >>= (\t -> return (utctDay t, e))
+ensureTimestamp :: MaybeTimestamped Entry -> IO (Timestamped Entry)
+ensureTimestamp (Nothing, e) = getCurrentTime >>= (\t -> return (utctDay t, e))
+ensureTimestamp (Just t, e) = return (t, e)
 
-budget :: BudgetEntry -> IO ()
-budget = record . Budget
+budget :: MaybeTimestamped BudgetEntry -> IO ()
+budget = record . withSecond Budget
 
-spend :: ExpenseEntry -> IO ()
-spend = record . Spend
+spend :: MaybeTimestamped ExpenseEntry -> IO ()
+spend = record . withSecond Spend
 
-save :: ExpenseEntry -> IO ()
-save = record . Save
+save :: MaybeTimestamped ExpenseEntry -> IO ()
+save = record . withSecond Save
 
-earn :: ExpenseEntry -> IO ()
-earn = record . Earn
+earn :: MaybeTimestamped ExpenseEntry -> IO ()
+earn = record . withSecond Earn
 
-realize :: ExpenseEntry -> IO ()
-realize = record . Realize
+realize :: MaybeTimestamped ExpenseEntry -> IO ()
+realize = record . withSecond Realize
 
-redo :: Entry -> IO ()
-redo = record . Redo
+redo :: MaybeTimestamped Entry -> IO ()
+redo = record . withSecond Redo
 
-record :: Entry -> IO ()
-record e = timestamp e >>= strictAppend journal . (++"\n") . show
+withSecond :: (b -> c) -> (a, b) -> (a, c)
+withSecond f (a, b) = (a, f b)
+
+record :: MaybeTimestamped Entry -> IO ()
+record e = ensureTimestamp e >>= strictAppend journal . (++"\n") . show
 
 queryBack :: Integer -> IO Journal
 queryBack lookback = do

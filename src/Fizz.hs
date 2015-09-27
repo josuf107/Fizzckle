@@ -5,17 +5,18 @@ import Fizz.Store
 import Fizz.Utils
 
 import Control.Applicative
-import Control.Monad (void)
+import Control.Monad (void, replicateM)
+import Data.Time
 import qualified Text.ParserCombinators.Parsec as PC
 
 data Action
     = Error String
     | BudgetReport Category
     | RecentExpenseReport Category
-    | EnterSaving ExpenseEntry
-    | EnterEarning ExpenseEntry
+    | EnterSaving (MaybeTimestamped ExpenseEntry)
+    | EnterEarning (MaybeTimestamped ExpenseEntry)
     | EnterBudget BudgetEntry
-    | EnterExpense ExpenseEntry deriving(Show)
+    | EnterExpense (MaybeTimestamped ExpenseEntry) deriving(Show)
 
 parseFizz :: String -> Action
 parseFizz = either (Error . show) id
@@ -25,17 +26,17 @@ doFizz :: Action -> IO String
 doFizz (Error s) = return $ "Error: " ++ s
 doFizz (EnterSaving e) = do
     save e
-    doFizz . BudgetReport . getExpenseCategory $ e
+    doFizz . BudgetReport . getExpenseCategory . snd $ e
 doFizz (EnterExpense e) = do
     spend e
-    doFizz . BudgetReport . getExpenseCategory $ e
+    doFizz . BudgetReport . getExpenseCategory . snd $ e
 doFizz (EnterEarning e) = do
     earn e
-    doFizz . BudgetReport . getExpenseCategory $ e
+    doFizz . BudgetReport . getExpenseCategory . snd $ e
 doFizz (RecentExpenseReport c) = do
     recentExpenseReport c <$> queryBack 30
 doFizz (EnterBudget b) = do
-    budget b
+    (budget . noTimestamp) b
     return "New budget created"
 doFizz (BudgetReport t) = do
     mbe <- findEntry (budgetCategory t)
@@ -119,15 +120,26 @@ earnEntryParser = do
     e <- expenseEntryParser
     return . EnterEarning $ e
 
-expenseEntryParser :: PC.GenParser Char st ExpenseEntry
+expenseEntryParser :: PC.GenParser Char st (MaybeTimestamped ExpenseEntry)
 expenseEntryParser = do
     whitespace
     v <- read <$> PC.many1 (PC.digit <|> PC.char '.')
     whitespace
+    maybeDay <- (fmap Just (PC.try dayParser)) <|> return Nothing
+    whitespace
     c <- mkCategory <$> nonwhitespace
     whitespace
     d <- PC.many1 PC.anyChar
-    return $ newExpenseEntry c v d
+    (return . maybeTimestamp maybeDay) (newExpenseEntry c v d)
+
+dayParser :: PC.GenParser Char st Day
+dayParser = do
+    year <- fmap read (replicateM 4 PC.digit)
+    void (PC.char '-')
+    month <- fmap read (replicateM 2 PC.digit)
+    void (PC.char '-')
+    day <- fmap read (replicateM 2 PC.digit)
+    return (fromGregorian year month day)
 
 frequencyParser :: PC.GenParser Char st Frequency
 frequencyParser =
