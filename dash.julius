@@ -1,0 +1,19 @@
+var appRoot = window.location.host;
+function newFizz () {
+    arr = $(this).serializeArray();
+    text = arr[0].value;
+    $.ajax({
+        url: "http://" + appRoot + "/dash",
+        data: { "doFizz" : text },
+        type: "post"
+    }).done(doRender);
+}
+
+function doRender () {
+    window.location.reload(true);
+}
+
+$(init)
+function init () {
+    $("#doFizz").submit(newFizz);
+}

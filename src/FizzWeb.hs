@@ -49,7 +49,7 @@ mkYesod "Fizz" [parseRoutes|
 /savings/#CategoryPiece SavingsR DELETE
 /expenses ExpensesR GET
 /expenses/#CategoryPiece ExpenseCategoryR GET POST
-/dash DashR GET
+/dash DashR GET POST
 /dash/fizz FizzR POST
 |]
 
@@ -211,6 +211,11 @@ getExpenseCategoryR cat = defaultLayout $ do
 postExpenseCategoryR :: CategoryPiece -> Handler ()
 postExpenseCategoryR _ = undefined
 
+postDashR :: Handler String
+postDashR = do
+    maybeFizz <- lookupPostParam "doFizz"
+    maybe (return "bad param") (liftIO . doFizz . parseFizz . T.unpack) maybeFizz
+
 getDashR :: Handler Html
 getDashR = defaultLayout $ do
     now <- liftIO getTime
@@ -218,6 +223,8 @@ getDashR = defaultLayout $ do
     let rows = getDashRows (localDay now) journal
     toWidget $(cassiusFile "budgets.cassius")
     $(whamletFile "dash.hamlet")
+    addScriptRemote "http://code.jquery.com/jquery-1.10.2.min.js"
+    toWidget $(juliusFile "dash.julius")
 
 getDashRows :: Day -> Journal -> [(String, String, String, Double, Double, Double, Double)]
 getDashRows today journal = fmap toRow expenses

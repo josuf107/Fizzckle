@@ -1,4 +1,9 @@
 <h1>This Month
+Do fizz:
+<form id=doFizz>
+    <input type=text name=fizzText id=fizzText>
+    <input type=submit id=sendFizz value=send>
+<div id=feedback>
 <table>
     <tr class=header>
         <td>Date
