@@ -7,9 +7,15 @@ function newFizz () {
         data: { "doFizz" : text },
         type: "post"
     }).done(doRender);
+    return false;
 }
 
-function doRender () {
+function doRender (data) {
+    $('#feedback').text(data);
+    setTimeout(reload, 2000);
+}
+
+function reload() {
     window.location.reload(true);
 }
 
