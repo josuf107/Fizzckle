@@ -38,6 +38,7 @@
     Total <span class=stress>#{showDollars totalBudget}</span> of <span
     class=stress>#{showDollars disposable}</span> leaving <span
     class=stress>#{showDollars $ disposable - totalBudget}</span>
+<svg id="budget_chart"></svg>
 <h1>Savings
 <table>
     <tr class=header>
