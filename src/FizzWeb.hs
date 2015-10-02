@@ -227,7 +227,7 @@ getDashR = defaultLayout $ do
     toWidget $(juliusFile "dash.julius")
 
 getDashRows :: Day -> Journal -> [(String, String, String, Double, Double, Double, Double)]
-getDashRows today journal = fmap toRow expenses
+getDashRows today journal = snd (mapAccumL toRow M.empty expenses)
     where
         (monthStart, monthEnd) = (toMonthStart today, toMonthEnd today)
         thisMonth = filter (between monthStart monthEnd . getTimestamp) journal
@@ -235,14 +235,16 @@ getDashRows today journal = fmap toRow expenses
         lastMonthBalances = M.map (\j -> totalBudgeted j - totalSpent j) . M.fromList . categories $ lastMonth
         budgets = M.fromList . mostRecentBudgets $ journal
         expenses = filter (isSpend . snd) thisMonth
-        toRow (day, Spend e) = (show day,
+        addHistory e = M.insertWith (+) (getExpenseCategory e) (getExpenseValue e)
+        getRemaining cat val budgetMap spendingMap = (maybe 0 getBudgetValue (M.lookup cat budgetMap)) - (maybe 0 id (M.lookup cat spendingMap)) - val
+        toRow spendingHistory (day, Spend e) = (addHistory e spendingHistory, (show day,
             printCategory . getExpenseCategory $ e,
             getExpenseDescription e,
             getExpenseValue e,
             maybe 0 getBudgetValue . M.lookup (getExpenseCategory e) $ budgets,
-            (maybe 0 getBudgetValue . M.lookup (getExpenseCategory e) $ budgets) - getExpenseValue e,
-            maybe 0 id . M.lookup (getExpenseCategory e) $ lastMonthBalances)
-        toRow _ = error "Non-Spend Entry in toRow"
+            getRemaining (getExpenseCategory e) (getExpenseValue e) budgets spendingHistory,
+            maybe 0 id . M.lookup (getExpenseCategory e) $ lastMonthBalances))
+        toRow _ _ = error "Non-Spend Entry in toRow"
 
 toMonthStart :: Day -> Day
 toMonthStart = (\(y, m, _) -> fromGregorian y m 1)
