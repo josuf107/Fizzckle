@@ -111,6 +111,7 @@ getBudgetsR = defaultLayout $ do
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
     addScriptRemote "http://code.jquery.com/jquery-1.10.2.min.js"
+    addScriptRemote "https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"
     toWidget $(juliusFile "budgets.julius")
 
 getBudgetR :: CategoryPiece -> Handler Html
