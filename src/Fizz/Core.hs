@@ -281,11 +281,9 @@ getCategory (Redo entry) = getCategory entry
 
 mostRecentBudgets :: Journal -> Budget
 mostRecentBudgets
-    = fmap (\(_, be) -> (getBudgetCategory be, be))
-    . fmap (maximumBy (on compare fst)) -- take latest in each group
-    . groupBy (on (==) (getBudgetCategory . snd)) -- group by category
-    . sortBy (on compare (getBudgetCategory . snd))
-    . fmap (\(t, Budget be) -> (t, be)) -- get budget entries
+    = M.toList
+    . M.fromList -- relies on fromList using the last value in the list
+    . fmap (\(_,Budget be) -> (getBudgetCategory be, be))
     . filter (isBudget . snd)
 
 printBudgetReport :: BudgetEntry -> Expenses -> IO String
