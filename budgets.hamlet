@@ -59,4 +59,5 @@
                     <td>ERROR
                     <td>ERROR
 
-<svg id="budget_chart" style="style:inline-block; margin-left:20px; vertical-align:top;"></svg>
+<span style="style:inline-block; margin-left:20px; vertical-align:top;">
+    <svg id="budget_chart"></svg>

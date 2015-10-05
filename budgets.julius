@@ -84,7 +84,11 @@ function init () {
         .attr("width", width - 50)
         .attr("height", 10)
         .attr("transform", "translate(10, " + (scale(maxDatum) + 50) + ")")
-        .style("fill", "black")
+        .style("fill", "black");
+    chart.append("text")
+        .attr("x", width - 40)
+        .attr("y", (scale(maxDatum) + 50))
+        .text(Math.round(100 * (1 - #{rawJS $ show (totalBudget / disposable)})) + "%");
     var bar = chart.selectAll("g")
         .data(data)
             .enter().append("g")
