@@ -13,46 +13,50 @@
         <br>
         <input type=text name=val id=val value=value>
         <input type=submit id=new value=create>
-<table>
-    <tr class=header>
-        <td>Category
-        <td>Spent
-        <td>Budgeted
-        <td>Frequency
-        <td colspan=3>
-    $forall budget <- (budgets ++ savings)
-        <tr>
-            <td>
-                <a class=stress href=/expenses/#{categoryPath $ getBudgetCategory budget}>
-                    #{categoryPath $ getBudgetCategory budget}
-            $maybe spent <- lookup (getBudgetCategory budget) totals
-                <td>#{showDollars spent}
-            $nothing
-                <td>ERROR
-            <td>#{showDollars $ getBudgetValue budget}
-            <td class="freq" onclick="set('#{categoryPath $ getBudgetCategory budget}', '#{getBudgetValue budget}', '#{show $ next $ getBudgetFrequency budget}', '#{show $ getBudgetType budget}')">#{show $ getBudgetFrequency budget}
-            <td class="button" onclick="set('#{categoryPath $ getBudgetCategory budget}', '#{(getBudgetValue budget) + 5}', '#{show $ getBudgetFrequency budget}', '#{show $ getBudgetType budget}')">+
-            <td class="button" onclick="set('#{categoryPath $ getBudgetCategory budget}', '#{(getBudgetValue budget) - 5}', '#{show $ getBudgetFrequency budget}', '#{show $ getBudgetType budget}')">-
-            <td class="button" onclick="tick('#{categoryPath $ getBudgetCategory budget}')">tick
-<p>
-    Total <span class=stress>#{showDollars totalBudget}</span> of <span
-    class=stress>#{showDollars disposable}</span> leaving <span
-    class=stress>#{showDollars $ disposable - totalBudget}</span>
-<svg id="budget_chart"></svg>
-<h1>Savings
-<table>
-    <tr class=header>
-        <td>Category
-        <td>Saved
-        <td colspan=1>
-    $forall saving <- savings
-        <tr>
-            <td>
-                <a class=stress href=/expenses/#{categoryPath $ getBudgetCategory saving}>
-                    #{categoryPath $ getBudgetCategory saving}
-            $maybe saved <- lookup (getBudgetCategory saving) savedTotals
-                <td>#{showDollars saved}
-                <td class="button" onclick="realize('#{categoryPath $ getBudgetCategory saving}', '#{saved}')">realize
-            $nothing
-                <td>ERROR
-                <td>ERROR
+<div style="display:inline-block; vertical-align:top;">
+    <table>
+        <tr class=header>
+            <td>Category
+            <td>Spent
+            <td>Budgeted
+            <td>Frequency
+            <td colspan=3>
+        $forall budget <- (budgets ++ savings)
+            <tr>
+                <td>
+                    <a class=stress href=/expenses/#{categoryPath $ getBudgetCategory budget}>
+                        #{categoryPath $ getBudgetCategory budget}
+                $maybe spent <- lookup (getBudgetCategory budget) totals
+                    <td>#{showDollars spent}
+                $nothing
+                    <td>ERROR
+                <td>#{showDollars $ getBudgetValue budget}
+                <td class="freq" onclick="set('#{categoryPath $ getBudgetCategory budget}', '#{getBudgetValue budget}', '#{show $ next $ getBudgetFrequency budget}', '#{show $ getBudgetType budget}')">#{show $ getBudgetFrequency budget}
+                <td class="button" onclick="set('#{categoryPath $ getBudgetCategory budget}', '#{(getBudgetValue budget) + 5}', '#{show $ getBudgetFrequency budget}', '#{show $ getBudgetType budget}')">+
+                <td class="button" onclick="set('#{categoryPath $ getBudgetCategory budget}', '#{(getBudgetValue budget) - 5}', '#{show $ getBudgetFrequency budget}', '#{show $ getBudgetType budget}')">-
+                <td class="button" onclick="tick('#{categoryPath $ getBudgetCategory budget}')">tick
+
+    <p>
+        Total <span class=stress>#{showDollars totalBudget}</span> of <span
+        class=stress>#{showDollars disposable}</span> leaving <span
+        class=stress>#{showDollars $ disposable - totalBudget}</span>
+
+    <h1>Savings
+    <table>
+        <tr class=header>
+            <td>Category
+            <td>Saved
+            <td colspan=1>
+        $forall saving <- savings
+            <tr>
+                <td>
+                    <a class=stress href=/expenses/#{categoryPath $ getBudgetCategory saving}>
+                        #{categoryPath $ getBudgetCategory saving}
+                $maybe saved <- lookup (getBudgetCategory saving) savedTotals
+                    <td>#{showDollars saved}
+                    <td class="button" onclick="realize('#{categoryPath $ getBudgetCategory saving}', '#{saved}')">realize
+                $nothing
+                    <td>ERROR
+                    <td>ERROR
+
+<svg id="budget_chart" style="style:inline-block; margin-left:20px; vertical-align:top;"></svg>

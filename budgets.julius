@@ -57,24 +57,34 @@ function init () {
     $("#newIncome").submit(newIncome);
     var randomGen = new MersenneTwister(7);
     var data = [#{rawJS (intercalate "," (map show (map getBudgetValue (budgets ++ savings))))}];
-    data.sort();
-    data.reverse();
+    var budgetNames = [#{rawJS (intercalate "," (map show (map categoryPath (map getBudgetCategory (budgets ++ savings)))))}];
+    var budgetMap = {};
+    for (i in data) {
+        budgetMap[budgetNames[i]] = data[i];
+    }
+    budgetNames.sort( function(a, b) { return budgetMap[b] - budgetMap[a]; });
+    data.sort( function(a, b) { return b - a; });
     var barWidth = 20;
-    var width = 420
+    var width = 1000;
     var height = 420;
     var maxDatum = d3.max(data);
     var total = #{rawJS (show disposable)};
     var scale = d3.scale.linear().domain([0, maxDatum]).range([0, height - 50]);
     var totalScale = d3.scale.linear().domain([0, total]).range([0, width - 50]);
     var chart = d3.select("#budget_chart")
-        .attr("height", height + 50)
+        .attr("height", height + 50 + 80)
         .attr("width", width);
     var positions = [];
-    var posx = 0;
+    var posx = 10;
     for (i in data) {
         positions[i] = posx;
         posx = posx + totalScale(data[i]);
     }
+    chart.append("rect")
+        .attr("width", width - 50)
+        .attr("height", 10)
+        .attr("transform", "translate(10, " + (scale(maxDatum) + 42) + ")")
+        .style("fill", "black")
     var bar = chart.selectAll("g")
         .data(data)
             .enter().append("g")
@@ -82,13 +92,28 @@ function init () {
                 .style("fill", function(d, i) { return getColor(randomGen); });
     bar.append("rect")
         .attr("height", function(d) { return scale(d); })
-        .attr("transform", function(d) { return "translate(0, " + scale(maxDatum - d) + ")"; })
+        .attr("transform", function(d) { return "translate(0, " + (scale(maxDatum - d) + 40) + ")"; })
         .attr("width",  function (d) { return totalScale(d); });
     bar.append("text")
-        //.attr("x", function(d) { return scale(d); })
-        //.attr("y", barWidth / 2)
+        /*.attr("x", function(d) { return scale(d); })*/
+        .attr("y", 30) // TODO: maxDatum - d + 40 - 20 or something
         .attr("dy", ".35em")
-        .text(function(d) { return d; });
+        .style("fill", "black")
+        .attr("transform", "rotate(-45, 0, 30)")
+        .text(function(d) { return ("$" + Math.round(d)); });
+    /*bar.append("text")*/
+        /*[>.attr("x", function(d) { return scale(d); })<]*/
+        /*.attr("y", scale(maxDatum) + 60)*/
+        /*.attr("dy", ".35em")*/
+        /*.style("fill", "black")*/
+        /*.text(function(d) { return (Math.round(100 * (d/total)) + "%"); });*/
+    bar.append("text")
+        /*.attr("x", function(d) { return scale(d); })*/
+        .attr("y", scale(maxDatum) + 50 + 30)
+        .attr("dy", ".35em")
+        .style("fill", "black")
+        .attr("transform", "rotate(45, 0, " + (scale(maxDatum) + 50 + 30) + ")")
+        .text(function(d, i) { return (Math.round(100 * (d/total)) + "% (") + budgetNames[i] + ")"; });
 }
 
 // Copied from https://gist.github.com/banksean/300494
