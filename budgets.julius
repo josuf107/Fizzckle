@@ -83,35 +83,30 @@ function init () {
     chart.append("rect")
         .attr("width", width - 50)
         .attr("height", 10)
-        .attr("transform", "translate(10, " + (scale(maxDatum) + 42) + ")")
+        .attr("transform", "translate(10, " + (scale(maxDatum) + 50) + ")")
         .style("fill", "black")
     var bar = chart.selectAll("g")
         .data(data)
             .enter().append("g")
-                .attr("transform", function(d, i) { return "translate(" + positions[i] + ", 0)";})
+                .attr("transform", function(d, i) { return "translate(" + positions[i] + ", 8)";})
                 .style("fill", function(d, i) { return getColor(randomGen); });
     bar.append("rect")
         .attr("height", function(d) { return scale(d); })
         .attr("transform", function(d) { return "translate(0, " + (scale(maxDatum - d) + 40) + ")"; })
-        .attr("width",  function (d) { return totalScale(d); });
+        .attr("width",  function (d) { return totalScale(d); })
+        .on("mouseover", function() { this.nextSibling.setAttribute("style", "fill: black;"); this.nextSibling.nextSibling.setAttribute("style", "fill: black;"); })
+        .on("mouseout", function(d) { if (d/total <= 0.02) { this.nextSibling.setAttribute("style", "fill: none;"); this.nextSibling.nextSibling.setAttribute("style", "fill: none;"); }});
     bar.append("text")
-        /*.attr("x", function(d) { return scale(d); })*/
-        .attr("y", 30) // TODO: maxDatum - d + 40 - 20 or something
+        .attr("y", function(d) { return (scale(maxDatum - d)) + 20; })
+        .attr("x", 5)
         .attr("dy", ".35em")
-        .style("fill", "black")
-        .attr("transform", "rotate(-45, 0, 30)")
+        .style("fill", function(d) { if (d/total > 0.02) { return "black"; } else { return "none"; }})
+        .attr("transform", function(d) { return "rotate(-45, 5, " + (scale(maxDatum - d) + 20) + ")"; })
         .text(function(d) { return ("$" + Math.round(d)); });
-    /*bar.append("text")*/
-        /*[>.attr("x", function(d) { return scale(d); })<]*/
-        /*.attr("y", scale(maxDatum) + 60)*/
-        /*.attr("dy", ".35em")*/
-        /*.style("fill", "black")*/
-        /*.text(function(d) { return (Math.round(100 * (d/total)) + "%"); });*/
     bar.append("text")
-        /*.attr("x", function(d) { return scale(d); })*/
         .attr("y", scale(maxDatum) + 50 + 30)
         .attr("dy", ".35em")
-        .style("fill", "black")
+        .style("fill", function(d) { if (d/total > 0.02) { return "black"; } else { return "none"; }})
         .attr("transform", "rotate(45, 0, " + (scale(maxDatum) + 50 + 30) + ")")
         .text(function(d, i) { return (Math.round(100 * (d/total)) + "% (") + budgetNames[i] + ")"; });
 }
