@@ -47,6 +47,7 @@ module Fizz.Core
     , getCategory
     , categories
     , next
+    , orderByDate
     )
 where
 
@@ -278,6 +279,14 @@ getCategory (Save e) = getExpenseCategory e
 getCategory (Realize e) = getExpenseCategory e
 getCategory (Undo entry) = getCategory entry
 getCategory (Redo entry) = getCategory entry
+
+orderByDate :: Journal -> Journal
+orderByDate
+    = concat
+    . fmap snd
+    . M.toAscList
+    . M.fromListWith (++)
+    . fmap (\(day, e) -> (day, [(day, e)]))
 
 mostRecentBudgets :: Journal -> Budget
 mostRecentBudgets
