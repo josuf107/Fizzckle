@@ -32,7 +32,7 @@ doFizz (EnterExpense e) = do
     doFizz . BudgetReport . getExpenseCategory . snd $ e
 doFizz (EnterEarning e) = do
     earn e
-    doFizz . BudgetReport . getExpenseCategory . snd $ e
+    return "Earnings recorded!"
 doFizz (RecentExpenseReport c) = do
     recentExpenseReport c <$> queryBack 30
 doFizz (EnterBudget b) = do
