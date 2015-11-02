@@ -80,7 +80,7 @@ function addBudgetChart() {
     }
     chart.append("rect")
         .attr("height", 2)
-        .attr("width", width)
+        .attr("width", data.length * 40)
         .attr("transform", "translate(0, 46)");
     var bar = chart.selectAll("g")
         .data(data)
