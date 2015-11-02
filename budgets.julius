@@ -61,58 +61,48 @@ function addBudgetChart() {
     }
     budgetNames.sort( function(a, b) { return budgetMap[b] - budgetMap[a]; });
     data.sort( function(a, b) { return b - a; });
-    var width = 1000;
+    data.unshift(#{rawJS (show (disposable - totalBudget))});
+    budgetNames.unshift("remainder");
+    var width = 1200;
     var height = 420;
     var maxDatum = d3.max(data);
     var total = #{rawJS (show disposable)};
-    var scale = d3.scale.linear().domain([0, maxDatum]).range([0, height - 50]);
+    var scale = d3.scale.linear().domain([0, total]).range([0, height - 50]);
     var totalScale = d3.scale.linear().domain([0, total]).range([0, width - 50]);
     var chart = d3.select("#budget_chart")
         .attr("height", height + 50 + 80)
         .attr("width", width);
-    chart.append("rect")
-        .attr("width", width - 50)
-        .attr("height", 10)
-        .attr("transform", "translate(10, " + (scale(maxDatum) + 50) + ")")
-        .style("fill", "black");
-    chart.append("text")
-        .attr("x", width - 40)
-        .attr("y", (scale(maxDatum) + 50))
-        .text(Math.round(100 * (1 - #{rawJS $ show (totalBudget / disposable)})) + "%");
     var positions = [];
     var posx = 10;
     for (i in data) {
         positions[i] = posx;
         posx = posx + totalScale(data[i]);
     }
+    chart.append("rect")
+        .attr("height", 2)
+        .attr("width", width)
+        .attr("transform", "translate(0, 46)");
     var bar = chart.selectAll("g")
         .data(data)
             .enter().append("g")
-                .attr("transform", function(d, i) { return "translate(" + positions[i] + ", 8)";})
+                .attr("transform", function(d, i) { return "translate(" + (10 + i * 40) + ", 8)";})
                 .style("fill", function(d, i) { return getColor(randomGen); });
     bar.append("rect")
         .attr("height", function(d) { return scale(d); })
-        .attr("transform", function(d) { return "translate(0, " + (scale(maxDatum - d) + 40) + ")"; })
-        .attr("width",  function (d) { return totalScale(d); })
-        .on("mouseover", function() {
-            this.nextSibling.setAttribute("style", "fill: black;");
-            this.nextSibling.nextSibling.setAttribute("style", "fill: black;"); })
-        .on("mouseout", function(d) {
-            if (d/total <= 0.02) {
-                this.nextSibling.setAttribute("style", "fill: none;");
-                this.nextSibling.nextSibling.setAttribute("style", "fill: none;"); }});
+        .attr("transform", function(d) { return "translate(0, " + (scale(total - d) + 40) + ")"; })
+        .attr("width", 40)
     bar.append("text")
-        .attr("y", function(d) { return (scale(maxDatum - d)) + 20; })
+        .attr("y", function(d) { return (scale(total - d)) + 20; })
         .attr("x", 5)
         .attr("dy", ".35em")
-        .style("fill", function(d) { if (d/total > 0.02) { return "black"; } else { return "none"; }})
-        .attr("transform", function(d) { return "rotate(-45, 5, " + (scale(maxDatum - d) + 20) + ")"; })
+        .style("fill", "black")
+        .attr("transform", function(d) { return "rotate(-45, 5, " + (scale(total - d) + 20) + ")"; })
         .text(function(d) { return ("$" + Math.round(d)); });
     bar.append("text")
-        .attr("y", scale(maxDatum) + 50 + 30)
+        .attr("y", scale(total) + 50 + 30)
         .attr("dy", ".35em")
-        .style("fill", function(d) { if (d/total > 0.02) { return "black"; } else { return "none"; }})
-        .attr("transform", "rotate(45, 0, " + (scale(maxDatum) + 50 + 30) + ")")
+        .style("fill", "black")
+        .attr("transform", "rotate(45, 0, " + (scale(total) + 50 + 30) + ")")
         .text(function(d, i) { return (Math.round(100 * (d/total)) + "% (") + budgetNames[i] + ")"; });
 }
 

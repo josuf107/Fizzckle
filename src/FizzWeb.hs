@@ -90,7 +90,7 @@ getBudgetsR :: Handler Html
 getBudgetsR = defaultLayout $ do
     setTitle "Fizzckle"
     journal <- liftIO Fizz.loadJournal
-    let allBudgets = fmap snd . mostRecentBudgets $ journal
+    let allBudgets = filter ((>0) . getBudgetValue) . fmap snd . mostRecentBudgets $ journal
     let activeCategories = fmap getBudgetCategory allBudgets :: [Category]
     let spentEach = fmap (\c
             -> totalSpent
