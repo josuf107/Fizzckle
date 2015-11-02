@@ -64,7 +64,7 @@ function addBudgetChart() {
     data.unshift(#{rawJS (show (disposable - totalBudget))});
     budgetNames.unshift("remainder");
     var width = 1200;
-    var height = 420;
+    var height = 600;
     var maxDatum = d3.max(data);
     var total = #{rawJS (show disposable)};
     var scale = d3.scale.linear().domain([0, total]).range([0, height - 50]);
