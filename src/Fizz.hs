@@ -16,7 +16,9 @@ data Action
     | EnterSaving (MaybeTimestamped ExpenseEntry)
     | EnterEarning (MaybeTimestamped ExpenseEntry)
     | EnterBudget BudgetEntry
-    | EnterExpense (MaybeTimestamped ExpenseEntry) deriving(Show)
+    | EnterExpense (MaybeTimestamped ExpenseEntry)
+    | RealizeSaving (MaybeTimestamped ExpenseEntry)
+    deriving(Show)
 
 parseFizz :: String -> Action
 parseFizz = either (Error . show) id
@@ -26,7 +28,7 @@ doFizz :: Action -> IO String
 doFizz (Error s) = return $ "Error: " ++ s
 doFizz (EnterSaving e) = do
     save e
-    doFizz . BudgetReport . getExpenseCategory . snd $ e
+    return "Savings recorded!"
 doFizz (EnterExpense e) = do
     spend e
     doFizz . BudgetReport . getExpenseCategory . snd $ e
@@ -37,7 +39,10 @@ doFizz (RecentExpenseReport c) = do
     recentExpenseReport c <$> queryBack 30
 doFizz (EnterBudget b) = do
     (budget . noTimestamp) b
-    return "New budget created"
+    return "New budget created!"
+doFizz (RealizeSaving e) = do
+    realize e
+    return "Savings realized!"
 doFizz (BudgetReport t) = do
     mbe <- findEntry (budgetCategory t)
     journal <- queryUntil (budgetCategory t)
@@ -48,7 +53,7 @@ doFizz (BudgetReport t) = do
             . filter (spendCategory t)
             . fmap snd
             $ journal
-        _ -> doFizz . Error $ 
+        _ -> doFizz . Error $
             "\"" ++ printCategory t ++ "\" is not a budget item"
 
 fizzParser :: PC.GenParser Char st Action
@@ -88,6 +93,7 @@ actionParser = do
         , PC.try budgetEntryParser
         , PC.try saveEntryParser
         , PC.try earnEntryParser
+        , PC.try realizeParser
         , return (Error "Unrecognized @command")]
 
 recentParser :: PC.GenParser Char st Action
@@ -119,6 +125,12 @@ earnEntryParser = do
     void $ PC.string "earn"
     e <- expenseEntryParser
     return . EnterEarning $ e
+
+realizeParser :: PC.GenParser Char st Action
+realizeParser = do
+    void $ PC.string "realize"
+    e <- expenseEntryParser
+    return . RealizeSaving $ e
 
 expenseEntryParser :: PC.GenParser Char st (MaybeTimestamped ExpenseEntry)
 expenseEntryParser = do
