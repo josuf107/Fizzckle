@@ -105,8 +105,11 @@ getBudgetsR = defaultLayout $ do
             $ allBudgets
     let totalBudget = sum . fmap getMonthlyValue $ (budgets ++ savings)
     now <- liftIO getTime
-    let startOfMonth = (\(y, m, _) -> fromGregorian y m 1) . toGregorian . localDay $ now
-    let disposable = totalDisposable . filter ((<startOfMonth) . fst) $ journal
+    let monthStart = (toMonthStart . localDay) now
+    let lastMonthStart = (toMonthStart . addGregorianMonthsClip (negate 1)) monthStart
+    let earned = totalEarned . filter ((between lastMonthStart monthStart) . fst) $ journal
+    let realized = totalRealized . filter ((>monthStart) . fst) $ journal
+    let disposable = earned + realized
     let savedTotals = fmap (\(c, j) -> (c, totalSaved j)) . Fizz.categories $ journal
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
