@@ -46,7 +46,7 @@
         <tr class=header>
             <td>Category
             <td>Saved
-            <td colspan=1>
+            <td>Budgeted
         $forall saving <- savings
             <tr>
                 <td>
@@ -54,10 +54,9 @@
                         #{categoryPath $ getBudgetCategory saving}
                 $maybe saved <- lookup (getBudgetCategory saving) savedTotals
                     <td>#{showDollars saved}
-                    <td class="button" onclick="realize('#{categoryPath $ getBudgetCategory saving}', '#{saved}')">realize
                 $nothing
                     <td>ERROR
-                    <td>ERROR
+                <td>#{showDollars $ getBudgetValue saving}
 
 <span style="style:inline-block; margin-left:20px; vertical-align:top;">
     <svg id="budget_chart"></svg>

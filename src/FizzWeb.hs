@@ -110,7 +110,7 @@ getBudgetsR = defaultLayout $ do
     let earned = totalEarned . filter ((between lastMonthStart monthStart) . fst) $ journal
     let realized = totalRealized . filter ((>monthStart) . fst) $ journal
     let disposable = earned + realized
-    let savedTotals = fmap (\(c, j) -> (c, totalSaved j)) . Fizz.categories $ journal
+    let savedTotals = fmap (\(c, j) -> (c, totalSaved j - totalRealized j)) . Fizz.categories $ journal
     $(whamletFile "budgets.hamlet")
     toWidget $(cassiusFile "budgets.cassius")
     addScriptRemote "http://code.jquery.com/jquery-1.10.2.min.js"
