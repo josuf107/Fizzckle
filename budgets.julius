@@ -61,6 +61,8 @@ function addBudgetChart() {
     }
     budgetNames.sort( function(a, b) { return budgetMap[b] - budgetMap[a]; });
     data.sort( function(a, b) { return b - a; });
+    data.unshift(#{rawJS (show (disposable - totalBudget))});
+    budgetNames.unshift("remainder");
     var width = 1000;
     var height = 420;
     var maxDatum = d3.max(data);
@@ -70,11 +72,11 @@ function addBudgetChart() {
     var chart = d3.select("#budget_chart")
         .attr("height", height + 50 + 80)
         .attr("width", width);
-    chart.append("rect")
-        .attr("width", width - 50)
-        .attr("height", 10)
-        .attr("transform", "translate(10, " + (scale(maxDatum) + 50) + ")")
-        .style("fill", "black");
+    //chart.append("rect")
+        //.attr("width", width - 50)
+        //.attr("height", 10)
+        //.attr("transform", "translate(10, " + (scale(maxDatum) + 50) + ")")
+        //.style("fill", "black");
     chart.append("text")
         .attr("x", width - 40)
         .attr("y", (scale(maxDatum) + 50))
@@ -88,12 +90,12 @@ function addBudgetChart() {
     var bar = chart.selectAll("g")
         .data(data)
             .enter().append("g")
-                .attr("transform", function(d, i) { return "translate(" + positions[i] + ", 8)";})
+                .attr("transform", function(d, i) { return "translate(" + i * 40 + ", 8)";})
                 .style("fill", function(d, i) { return getColor(randomGen); });
     bar.append("rect")
         .attr("height", function(d) { return scale(d); })
         .attr("transform", function(d) { return "translate(0, " + (scale(maxDatum - d) + 40) + ")"; })
-        .attr("width",  function (d) { return totalScale(d); })
+        .attr("width", 40)
         .on("mouseover", function() {
             this.nextSibling.setAttribute("style", "fill: black;");
             this.nextSibling.nextSibling.setAttribute("style", "fill: black;"); })
