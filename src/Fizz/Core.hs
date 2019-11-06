@@ -30,6 +30,7 @@ module Fizz.Core
     , printCategory
     , budgetCategory
     , spendCategory
+    , earnCategory
     , mostRecentBudgets
     , getMonthlyValue
     , totalSpent
@@ -48,6 +49,7 @@ module Fizz.Core
     , categories
     , next
     , orderByDate
+    , spendingAccounts
     )
 where
 
@@ -59,6 +61,7 @@ import Data.List
 import qualified Data.Map as M
 import Data.Time
 import Data.Time.Calendar.WeekDate
+import qualified Data.Set as Set
 
 type Timestamped a = (Day, a)
 type MaybeTimestamped a = (Maybe Day, a)
@@ -265,6 +268,10 @@ spendCategory :: Category -> Entry -> Bool
 spendCategory c (Spend e) = getExpenseCategory e == c
 spendCategory _ _ = False
 
+earnCategory :: Category -> Entry -> Bool
+earnCategory c (Earn e) = getExpenseCategory e == c
+earnCategory _ _ = False
+
 categories :: Journal -> [(Category, Journal)]
 categories
     = M.toAscList
@@ -309,3 +316,6 @@ printBudgetReport be es = do
         ++", leaving "
         ++ showDollars bb
         ++ " for the next " ++ daysRemaining ++ " days."
+
+spendingAccounts :: Set.Set Category
+spendingAccounts = Set.fromList . fmap mkCategory $ ["joseph", "susan", "food", "misc"]

@@ -8,9 +8,12 @@ module Main where
 
 import Fizz
 import Fizz.Core as Fizz
+import Fizz.Infuser as Infuser
 import qualified Fizz.Store as Fizz
 import Fizz.Utils (showDollars, between, getTime)
 
+import Control.Monad
+import Control.Concurrent
 import Data.Char (toLower)
 import Data.Function
 import Data.List
@@ -35,13 +38,18 @@ main = do
 prod :: [String] -> IO ()
 prod (host:port:_) =
     case reads port of
-        ((p,_):_) -> warp p (Fizz . T.pack $ host)
+        ((p,_):_) -> startUp p host
         _ -> error $ "Invalid port " ++ port
-prod (host:_) = warp 80 (Fizz . T.pack $ host)
+prod (host:_) = startUp 80 host
 prod _ = error "Must specify host a la FizzWeb example.com 8080"
 
 debug :: IO ()
-debug = warp 3000 (Fizz "localhost")
+debug = startUp 3000 "localhost"
+
+startUp :: Int -> String -> IO ()
+startUp port host = do
+    void $ forkIO Infuser.start
+    warp port (Fizz . T.pack $ host)
 
 mkYesod "Fizz" [parseRoutes|
 /budgets BudgetsR GET

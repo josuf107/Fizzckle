@@ -8,10 +8,12 @@ import Control.Applicative
 import Control.Monad (void, replicateM)
 import Data.Time
 import qualified Text.ParserCombinators.Parsec as PC
+import qualified Data.Set as Set
 
 data Action
     = Error String
     | BudgetReport Category
+    | AccountReport Category
     | RecentExpenseReport Category
     | EnterSaving (MaybeTimestamped ExpenseEntry)
     | EnterEarning (MaybeTimestamped ExpenseEntry)
@@ -31,7 +33,8 @@ doFizz (EnterSaving e) = do
     return "Savings recorded!"
 doFizz (EnterExpense e) = do
     spend e
-    doFizz . BudgetReport . getExpenseCategory . snd $ e
+    let category = getExpenseCategory . snd $ e
+    doFizz . BudgetReport $ category
 doFizz (EnterEarning e) = do
     earn e
     return "Earnings recorded!"
@@ -44,17 +47,25 @@ doFizz (RealizeSaving e) = do
     realize e
     return "Savings realized!"
 doFizz (BudgetReport t) = do
-    mbe <- findEntry (budgetCategory t)
-    journal <- queryUntil (budgetCategory t)
-    case mbe of
-        Just (_, Budget be)
-            -> printBudgetReport be
-            . fmap (\(Spend e) -> e)
-            . filter (spendCategory t)
-            . fmap snd
-            $ journal
-        _ -> doFizz . Error $
-            "\"" ++ printCategory t ++ "\" is not a budget item"
+    if Set.member t spendingAccounts
+        then doFizz . AccountReport $ t
+        else do
+            mbe <- findEntry (budgetCategory t)
+            journal <- queryUntil (budgetCategory t)
+            case mbe of
+                Just (_, Budget be)
+                    -> printBudgetReport be
+                    . fmap (\(Spend e) -> e)
+                    . filter (spendCategory t)
+                    . fmap snd
+                    $ journal
+                _ -> doFizz . Error $
+                    "\"" ++ printCategory t ++ "\" is not a budget item"
+doFizz (AccountReport t) = do
+    journal <- loadJournal
+    let spent = totalSpent . filter (spendCategory t . snd) $ journal
+    let earned = totalEarned . filter (earnCategory t . snd) $ journal
+    return $ "Remaining balance: " ++ (showDollars $ earned - spent)
 
 fizzParser :: PC.GenParser Char st Action
 fizzParser = PC.choice [emptyParser
