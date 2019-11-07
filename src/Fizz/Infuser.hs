@@ -14,7 +14,7 @@ start :: IO ()
 start = do
     fizzLog "Infusing spending accounts"
     mapM_ infuse (Set.toList spendingAccounts)
-    threadDelay (1 * 60 * 1000 * 1000)
+    threadDelay (60 * 60 * 1000 * 1000)
     start
 
 infuse :: Category -> IO ()
