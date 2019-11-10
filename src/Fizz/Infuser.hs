@@ -37,7 +37,10 @@ getInfusion category = newExpenseEntry category (infusions Map.! category) "Week
 infusions :: Map.Map Category Double
 infusions = Map.fromList . fmap (\(category, amount) -> (mkCategory category, amount)) $
     [ ("joseph", 46.51)
-    , ("food", 488.37)
-    , ("susan", 162.79)
-    , ("misc", 162.79)
+    , ("food", 453.37)
+    , ("susan", 157.79)
+    , ("misc", 157.79)
     ]
+
+-- 200 less a month is 46.51 less a week. I'll split that into 35
+-- dollars from food and 5 dollars each from susan/misc
