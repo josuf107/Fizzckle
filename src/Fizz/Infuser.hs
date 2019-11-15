@@ -29,7 +29,7 @@ checkInfusionDue category = do
         Nothing -> return True -- never infused before; go for it!
         (Just (day, _)) -> do
             today <- utctDay <$> getCurrentTime
-            return $ diffDays day today > 6
+            return $ diffDays today day > 6
 
 getInfusion :: Category -> ExpenseEntry
 getInfusion category = newExpenseEntry category (infusions Map.! category) "Weekly infusion"
