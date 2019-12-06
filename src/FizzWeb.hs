@@ -263,7 +263,7 @@ toMonthStart = (\(y, m, _) -> fromGregorian y m 1)
     . toGregorian
 
 toMonthEnd :: Day -> Day
-toMonthEnd = (\(y, m, _) -> fromGregorian y (m + 1) 1)
+toMonthEnd = (\(y, m, _) -> if m < 12 then fromGregorian y (m + 1) 1 else fromGregorian (y + 1) 1 1)
     . toGregorian
 
 maybeReadT :: Read a => T.Text -> Maybe a
